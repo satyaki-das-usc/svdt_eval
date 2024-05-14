@@ -3,39 +3,32 @@ num_workers: 8
 log_offline: false
 
 # preprocess keys
-joern_path: "joern/joern-parse"
+joern_path: "/media/satyaki/160f047a-dacc-449d-9208-a75717e899a1/research/repos/joern/joern-parse"
 split_token: false
+cleaning_method: "delabel"
 
 # data keys
-data_folder: "C/test_data"
+data_folder: "data"
+source_root_folder: "source-code"
+csv_folder: "csv"
+
+nodes_filename: "nodes.csv"
+edges_filename: "edges.csv"
+cpp_paths_filename: "cpp_paths.json"
+xml_filename: "SARD_testcaseinfo.xml"
+ground_truth_filename: "ground_truth.json"
+function_metadata_filename: "function_metadata.json"
+dataset_filename: "function.json"
+pairs_filename: "vv_vn_pairs.json"
+
+
 save_every_epoch: 1
 val_every_epoch: 1
 log_every_epoch: 10
 progress_bar_refresh_rate: 1
 
-cfg_folder: "cfg_db"
-pdg_folder: "pdg_db"
-call2cfgNode_folder: "dict_call2cfgNodeID_funcID"
-
-slice_folder: "slices"
-label_folder: "label_source"
-slice_label_folder: "slice_label"
-clean_slice_folder: "clean_slices"
-
-ground_truth_filename: "ground_truth.txt"
-
-source2slice_folder: "source2slice"
-hash_folder: "hash_slices"
-deletelist_folder: "delete_list"
-corpus_folder: "corpus"
-w2v_model_folder: "w2v_model"
-w2v_modelname: "wordmodel3"
-vector_folder: "vector"
-dl_input_folder: "dl_input/cdg_ddg"
-dl_input_shuffle_folder: "dl_input_shuffle/cdg_ddg"
-
 dataset:
-  name: CWE119
+  name: SARD
   token:
     max_parts: 16
     is_wrapped: false
@@ -72,14 +65,14 @@ hyper_parameters:
 
   n_epochs: 50
   patience: 10
-  batch_size: 64
-  test_batch_size: 64
+  batch_size: 16
+  test_batch_size: 16
   reload_dataloader: true
   clip_norm: 5
   val_every_step: 1.0
   log_every_n_steps: 50
   progress_bar_refresh_rate: 1
-  resume_from_checkpoint: null
+  resume_from_checkpoint: DevignDeepWukong
   shuffle_data: true
 
   optimizer: "Adam"
