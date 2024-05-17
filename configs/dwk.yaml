@@ -8,6 +8,7 @@ split_token: false
 cleaning_method: "delabel"
 
 # data keys
+repo_root: "/media/satyaki/160f047a-dacc-449d-9208-a75717e899a1/research/repos/SySeVRCopy"
 data_folder: "data"
 source_root_folder: "source-code"
 csv_folder: "csv"
