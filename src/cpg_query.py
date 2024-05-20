@@ -63,6 +63,23 @@ def is_buffer_copy_function_call(joern_nodes, v):
         return False
     return len([node for node in line_nodes if node["type"] == "Callee" and node["code"].strip() == "strncpy"]) > 0
 
+def is_buffer_deallocation_function_call(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    if len([node for node in line_nodes if node["type"] == "CallExpression"]) == 0:
+        return False
+    return len([node for node in line_nodes if node["type"] == "Callee" and node["code"].strip() == "free"]) > 0
+
+def can_follow(CPG, u, v):
+    if CPG.has_edge(v, u) and CPG.get_edge_data(v, u)["prop"] == "p":
+        return True
+    u_ctrl_edges = [edge for edge in CPG.in_edges(u) if CPG.get_edge_data(edge[0], edge[1])["prop"] == "c"]
+    v_ctrl_edges = [edge for edge in CPG.in_edges(v) if CPG.get_edge_data(edge[0], edge[1])["prop"] == "c"]
+    for x in u_ctrl_edges:
+        for y in v_ctrl_edges:
+            if CPG.has_edge(y[0], x[0]) and CPG.get_edge_data(y[0], x[0])["prop"] == "p":
+                return True
+    return False
+
 def get_node_type(joern_nodes, v):
     if is_buffer_write_function_call(joern_nodes, v):
         return "WF"
@@ -72,6 +89,8 @@ def get_node_type(joern_nodes, v):
         return "AD"
     elif is_buffer_copy_function_call(joern_nodes, v):
         return "CF"
+    elif is_buffer_deallocation_function_call(joern_nodes, v):
+        return "DF"
     return "UNK"
 
 def get_buffer_write_dest(joern_nodes, v):
@@ -139,6 +158,21 @@ def get_buffer_length(joern_nodes, v, node_type):
         return evaluate_size(size_str)
     return -1
 
+def get_buffer_alloc_dest(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    asgnmnt_nodes = [node for node in line_nodes if node["type"] == "AssignmentExpression"]
+
+    assert len(asgnmnt_nodes) == 1, f"ERROR: Buffer alloc with {len(asgnmnt_nodes)} assignment expressions"
+
+    return asgnmnt_nodes[0]["code"].split("=", maxsplit=1)[0].strip()
+
+def get_deallocated_buffer(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
+    assert len(arg_nodes) == 1, f"ERROR: Buffer dealloc with {len(arg_nodes)} arguments"
+
+    return arg_nodes[0]["code"].strip()
+
 def mu(nodes_dir, key, v, u=None):
     nodes_path = join(nodes_dir, "nodes.csv")
     joern_nodes = read_csv(nodes_path)
@@ -165,6 +199,11 @@ def mu(nodes_dir, key, v, u=None):
         return get_buffer_write_byte_count(joern_nodes, v)
     if key == "len":
         return get_buffer_length(joern_nodes, v, mu(nodes_dir, "type", v))
+    if key == "dest":
+        return get_buffer_alloc_dest(joern_nodes, v)
+    if key == "dealloc_buff":
+        return get_deallocated_buffer(joern_nodes, v)
+
     return None
 
 if __name__ == "__main__":
