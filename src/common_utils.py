@@ -69,35 +69,41 @@ def build_CPG(code_path: str,
     if len(nodes) == 0:
         return None, None
 
-    PDG = nx.DiGraph(file_paths=[source_path])
-    control_edges, data_edges, post_dom_edges, def_edges, use_edges = list(), list(), list(), list(), list()
+    CPG = nx.DiGraph(file_paths=[source_path])
+    control_edges, data_edges, post_dom_edges, def_use_edges = list(), list(), list(), list()
     node_id_to_ln = extract_nodes_with_location_info(nodes)
     for edge in edges:
         edge_type = edge['type'].strip()
-        if True:
-            start_node_id = edge['start'].strip()
-            end_node_id = edge['end'].strip()
-            if start_node_id not in node_id_to_ln.keys(
-            ) or end_node_id not in node_id_to_ln.keys():
+        start_node_id = edge['start'].strip()
+        end_node_id = edge['end'].strip()
+        if edge_type in ["DEF", "USE"]:
+            if start_node_id not in node_id_to_ln.keys():
                 continue
             start_ln = node_id_to_ln[start_node_id]
-            end_ln = node_id_to_ln[end_node_id]
-            if edge_type == 'CONTROLS':  # Control
-                control_edges.append((start_ln, end_ln, {"label": "CONTROLS"}))
-            if edge_type == 'REACHES':  # Data
-                data_edges.append((start_ln, end_ln, {"label": "REACHES", "var": edge["var"].strip()}))
-            if edge_type == 'POST_DOM': # Post dominance
-                post_dom_edges.append((start_ln, end_ln, {"label": "POST_DOM"}))
-            if edge_type == 'DEF': # Definition
-                def_edges.append((start_ln, end_ln, {"label": "DEF"}))
-            if edge_type == 'USE': # Use
-                use_edges.append((start_ln, end_ln, {"label": "USE"}))
-    PDG.add_edges_from(control_edges)
-    PDG.add_edges_from(data_edges)
-    PDG.add_edges_from(post_dom_edges)
-    PDG.add_edges_from(def_edges)
-    PDG.add_edges_from(use_edges)
-    return PDG
+            end_ln = (-1) * int(end_node_id)
+            if edge_type == "USE":
+                end_ln *= 2
+            symbol_used = [node for node in nodes if node["key"].strip() == end_node_id][0]["code"].strip()
+            def_use_edges.append((start_ln, end_ln, {"label": edge_type, "symbol": symbol_used}))
+            continue
+        if start_node_id not in node_id_to_ln.keys(
+        ) or end_node_id not in node_id_to_ln.keys():
+            continue
+        start_ln = node_id_to_ln[start_node_id]
+        end_ln = node_id_to_ln[end_node_id]
+        if edge_type == 'CONTROLS':  # Control
+            control_edges.append((start_ln, end_ln, {"label": edge_type}))
+        if edge_type == 'REACHES':  # Data
+            data_edges.append((start_ln, end_ln, {"label": edge_type, "var": edge["var"].strip()}))
+        if edge_type == 'POST_DOM': # Post dominance
+            post_dom_edges.append((start_ln, end_ln, {"label": edge_type}))
+    
+    CPG.add_edges_from(control_edges)
+    CPG.add_edges_from(data_edges)
+    CPG.add_edges_from(post_dom_edges)
+    CPG.add_edges_from(def_use_edges)
+    
+    return CPG
 
 if __name__ == "__main__":
     pass
