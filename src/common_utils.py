@@ -20,9 +20,6 @@ def parse_args():
     return args
 
 def read_csv(csv_file_path: str) -> List:
-    """
-    read csv file
-    """
     assert exists(csv_file_path), f"no {csv_file_path}"
     data = []
     with open(csv_file_path) as fp:
@@ -59,17 +56,8 @@ def extract_nodes_with_location_info(nodes):
             node_id_to_line_number[node_id] = line_num
     return node_id_to_line_number
 
-def build_PDG(code_path: str,
+def build_CPG(code_path: str,
               source_path: str) -> Tuple[nx.DiGraph, Dict[str, Set[int]]]:
-    """
-    build program dependence graph from code
-
-    Args:
-        code_path (str): source code root path
-        source_path (str): source file path
-
-    Returns: PDG
-    """
     nodes_path = join(code_path, "nodes.csv")
     edges_path = join(code_path, "edges.csv")
     if not exists(nodes_path) or not exists(edges_path):
@@ -82,11 +70,11 @@ def build_PDG(code_path: str,
         return None, None
 
     PDG = nx.DiGraph(file_paths=[source_path])
-    control_edges, data_edges, post_dom_edges = list(), list(), list()
+    control_edges, data_edges, post_dom_edges, def_edges, use_edges = list(), list(), list(), list(), list()
     node_id_to_ln = extract_nodes_with_location_info(nodes)
     for edge in edges:
         edge_type = edge['type'].strip()
-        if True:  # edge_type in ['IS_AST_PARENT', 'FLOWS_TO']:
+        if True:
             start_node_id = edge['start'].strip()
             end_node_id = edge['end'].strip()
             if start_node_id not in node_id_to_ln.keys(
@@ -95,14 +83,20 @@ def build_PDG(code_path: str,
             start_ln = node_id_to_ln[start_node_id]
             end_ln = node_id_to_ln[end_node_id]
             if edge_type == 'CONTROLS':  # Control
-                control_edges.append((start_ln, end_ln, {"prop": "c"}))
+                control_edges.append((start_ln, end_ln, {"label": "CONTROLS"}))
             if edge_type == 'REACHES':  # Data
-                data_edges.append((start_ln, end_ln, {"prop": "d"}))
-            if edge_type == 'POST_DOM':
-                post_dom_edges.append((start_ln, end_ln, {"prop": "p"}))
+                data_edges.append((start_ln, end_ln, {"label": "REACHES", "var": edge["var"].strip()}))
+            if edge_type == 'POST_DOM': # Post dominance
+                post_dom_edges.append((start_ln, end_ln, {"label": "POST_DOM"}))
+            if edge_type == 'DEF': # Definition
+                def_edges.append((start_ln, end_ln, {"label": "DEF"}))
+            if edge_type == 'USE': # Use
+                use_edges.append((start_ln, end_ln, {"label": "USE"}))
     PDG.add_edges_from(control_edges)
     PDG.add_edges_from(data_edges)
     PDG.add_edges_from(post_dom_edges)
+    PDG.add_edges_from(def_edges)
+    PDG.add_edges_from(use_edges)
     return PDG
 
 if __name__ == "__main__":

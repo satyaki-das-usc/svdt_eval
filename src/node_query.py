@@ -70,13 +70,13 @@ def is_buffer_deallocation_function_call(joern_nodes, v):
     return len([node for node in line_nodes if node["type"] == "Callee" and node["code"].strip() == "free"]) > 0
 
 def can_follow(CPG, u, v):
-    if CPG.has_edge(v, u) and CPG.get_edge_data(v, u)["prop"] == "p":
+    if CPG.has_edge(v, u) and CPG.get_edge_data(v, u)["label"] == "POST_DOM":
         return True
-    u_ctrl_edges = [edge for edge in CPG.in_edges(u) if CPG.get_edge_data(edge[0], edge[1])["prop"] == "c"]
-    v_ctrl_edges = [edge for edge in CPG.in_edges(v) if CPG.get_edge_data(edge[0], edge[1])["prop"] == "c"]
+    u_ctrl_edges = [edge for edge in CPG.in_edges(u) if CPG.get_edge_data(edge[0], edge[1])["label"] == "CONTROLS"]
+    v_ctrl_edges = [edge for edge in CPG.in_edges(v) if CPG.get_edge_data(edge[0], edge[1])["label"] == "CONTROLS"]
     for x in u_ctrl_edges:
         for y in v_ctrl_edges:
-            if CPG.has_edge(y[0], x[0]) and CPG.get_edge_data(y[0], x[0])["prop"] == "p":
+            if CPG.has_edge(y[0], x[0]) and CPG.get_edge_data(y[0], x[0])["label"] == "POST_DOM":
                 return True
     return False
 
@@ -173,21 +173,9 @@ def get_deallocated_buffer(joern_nodes, v):
 
     return arg_nodes[0]["code"].strip()
 
-def mu(nodes_dir, key, v, u=None):
+def mu(nodes_dir, key, v):
     nodes_path = join(nodes_dir, "nodes.csv")
     joern_nodes = read_csv(nodes_path)
-    
-    if u is not None:
-        edges_path = join(nodes_dir, "edges.csv")
-        joern_edges = read_csv(edges_path)
-        uid = joern_nodes[get_start_node_idx(joern_nodes, u)]["key"]
-        vid = joern_nodes[get_start_node_idx(joern_nodes, v)]["key"]
-
-        data_edges = [edge for edge in joern_edges if edge["start"] == uid and edge["end"] == vid and edge["type"] == "REACHES"]
-        if len(data_edges) == 0:
-            return ""
-
-        return data_edges[0][key]
 
     if key == "type":
         return get_node_type(joern_nodes, v)
