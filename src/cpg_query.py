@@ -146,6 +146,52 @@ def can_follow(CPG, u, v):
                 return True
     return False
 
+def is_sensi_read_function_call(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    callee_nodes = [node for node in line_nodes if node["type"] == "Callee"]
+
+    sensi_read_apis = ["getch", "fgets", "gets", "getchar", "fgetc"]
+    for node in callee_nodes:
+        callee_func = node["code"].strip()
+        if callee_func not in sensi_read_apis:
+            continue
+        return True
+    
+    return False
+
+def is_sensi_write_function_call(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    callee_nodes = [node for node in line_nodes if node["type"] == "Callee"]
+
+    sensi_write_apis = ["memcpy", "strncpy", "strcpy", "wcsncpy", "memset", "wmemset"]
+    for node in callee_nodes:
+        callee_func = node["code"].strip()
+        if callee_func not in sensi_write_apis:
+            continue
+        return True
+    
+    return False
+
+def get_called_sensi_funcs(joern_nodes, v, key):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    callee_nodes = [node for node in line_nodes if node["type"] == "Callee"]
+
+    sensi_apis = []
+
+    if key == "sensi_read_callee":
+        sensi_apis = ["getch", "fgets", "gets", "getchar", "fgetc"]
+    if key == "sensi_write_callee":
+        sensi_apis = ["memcpy", "strncpy", "strcpy", "wcsncpy", "memset", "wmemset"]
+    
+    called_sensi_funcs = set()
+    for node in callee_nodes:
+        callee_func = node["code"].strip()
+        if callee_func not in sensi_apis:
+            continue
+        called_sensi_funcs.add(callee_func)
+    
+    return list(called_sensi_funcs)
+
 def get_node_type(joern_nodes, v):
     if is_buffer_write_function_call(joern_nodes, v):
         return "WF"
@@ -163,6 +209,10 @@ def get_node_type(joern_nodes, v):
         return "AIR"
     elif is_relational_expression(joern_nodes, v):
         return "RE"
+    elif is_sensi_read_function_call(joern_nodes, v):
+        return "SRF"
+    elif is_sensi_write_function_call(joern_nodes, v):
+        return "SWF"
     return "UNK"
 
 def get_buffer_write_dest(joern_nodes, v):
@@ -273,6 +323,8 @@ def mu(nodes_dir, key, v):
         return get_array_indexing_info(joern_nodes, v)
     if key == "dealloc_buff":
         return get_deallocated_buffer(joern_nodes, v)
+    if key in ["sensi_read_callee", "sensi_write_callee"]:
+        return get_called_sensi_funcs(joern_nodes, v, key)
 
     return None
 
