@@ -2,6 +2,31 @@ from os.path import join
 
 from src.common_utils import read_csv
 
+def get_incoming_dd_edges_for_var(CPG, v, var):
+    in_data_var = set()
+    for edge in CPG.in_edges(v):
+        u = edge[0]
+        edge_data = CPG.get_edge_data(u, v)
+        if edge_data["label"] != "REACHES":
+            continue
+        edge_var = edge_data["var"]
+        if edge_var != var:
+            continue
+        in_data_var.add(u)
+    
+    return in_data_var
+
+def get_incoming_cd_edges(CPG, v):
+    in_ctrl_v = set()
+    for edge in CPG.in_edges(v):
+        u = edge[0]
+        edge_data = CPG.get_edge_data(u, v)
+        if edge_data["label"] != "CONTROLS":
+            continue
+        in_ctrl_v.add(u)
+    
+    return in_ctrl_v
+
 def get_start_node_idx(joern_nodes, line_num):
     for idx, node in enumerate(joern_nodes):
         if len(node["location"]) == 0:
@@ -57,6 +82,42 @@ def is_arr_decl(joern_nodes, v):
     
     return False
 
+def is_arr_index_write_operation(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    arr_indexing_nodes = [node for node in line_nodes if node["type"] == "ArrayIndexing"]
+    if len(arr_indexing_nodes) == 0:
+        return False
+    arr_indexing_str = arr_indexing_nodes[0]["code"].strip().replace(" ", "")
+    asgnmt_expr_nodes = [node for node in line_nodes if node["type"] == "AssignmentExpression"]
+
+    for node in asgnmt_expr_nodes:
+        asgnmt_operator = node["operator"].strip()
+        asgnmt_code_str = node["code"].strip()
+        asgnmt_operand1, asgnmt_operand2 = [operand.replace(" ", "").strip() for operand in asgnmt_code_str.split(asgnmt_operator, maxsplit=1)]
+        if asgnmt_operand1 != arr_indexing_str:
+            continue
+        return True
+    
+    return False
+
+def is_arr_index_read_operation(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    arr_indexing_nodes = [node for node in line_nodes if node["type"] == "ArrayIndexing"]
+    if len(arr_indexing_nodes) == 0:
+        return False
+    arr_indexing_str = arr_indexing_nodes[0]["code"].strip().replace(" ", "")
+    asgnmt_expr_nodes = [node for node in line_nodes if node["type"] == "AssignmentExpression"]
+    
+    for node in asgnmt_expr_nodes:
+        asgnmt_operator = node["operator"].strip()
+        asgnmt_code_str = node["code"].strip()
+        asgnmt_operand1, asgnmt_operand2 = [operand.replace(" ", "").strip() for operand in asgnmt_code_str.split(asgnmt_operator, maxsplit=1)]
+        if asgnmt_operand1 != arr_indexing_str:
+            continue
+        return False
+    
+    return True
+
 def is_buffer_copy_function_call(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     if len([node for node in line_nodes if node["type"] == "CallExpression"]) == 0:
@@ -68,6 +129,11 @@ def is_buffer_deallocation_function_call(joern_nodes, v):
     if len([node for node in line_nodes if node["type"] == "CallExpression"]) == 0:
         return False
     return len([node for node in line_nodes if node["type"] == "Callee" and node["code"].strip() == "free"]) > 0
+
+def is_relational_expression(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+
+    return len([node for node in line_nodes if node["type"] == "RelationalExpression"]) > 0
 
 def can_follow(CPG, u, v):
     if CPG.has_edge(v, u) and CPG.get_edge_data(v, u)["label"] == "POST_DOM":
@@ -91,6 +157,12 @@ def get_node_type(joern_nodes, v):
         return "CF"
     elif is_buffer_deallocation_function_call(joern_nodes, v):
         return "DF"
+    elif is_arr_index_write_operation(joern_nodes, v):
+        return "AIW"
+    elif is_arr_index_read_operation(joern_nodes, v):
+        return "AIR"
+    elif is_relational_expression(joern_nodes, v):
+        return "RE"
     return "UNK"
 
 def get_buffer_write_dest(joern_nodes, v):
@@ -166,6 +238,14 @@ def get_buffer_alloc_dest(joern_nodes, v):
 
     return asgnmnt_nodes[0]["code"].split("=", maxsplit=1)[0].strip()
 
+def get_array_indexing_info(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    arr_indexing_node = [node for node in line_nodes if node["type"] == "ArrayIndexing"][0]
+    dest_arr, dest_index = [part.strip() for part in arr_indexing_node["code"].split("[", maxsplit=1)]
+    dest_index = dest_index.replace("]", "").strip()
+
+    return dest_arr, dest_index
+
 def get_deallocated_buffer(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
@@ -189,6 +269,8 @@ def mu(nodes_dir, key, v):
         return get_buffer_length(joern_nodes, v, mu(nodes_dir, "type", v))
     if key == "dest":
         return get_buffer_alloc_dest(joern_nodes, v)
+    if key == "arr_idx":
+        return get_array_indexing_info(joern_nodes, v)
     if key == "dealloc_buff":
         return get_deallocated_buffer(joern_nodes, v)
 
