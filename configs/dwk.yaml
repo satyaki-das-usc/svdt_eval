@@ -22,6 +22,8 @@ function_metadata_filename: "function_metadata.json"
 dataset_filename: "function.json"
 pairs_filename: "vv_vn_pairs.json"
 
+detection_result_filename: "detection_result.json"
+
 
 save_every_epoch: 1
 val_every_epoch: 1

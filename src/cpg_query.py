@@ -51,7 +51,7 @@ def get_line_nodes(joern_nodes, line_num):
     end_idx = get_end_node_idx(joern_nodes, start_idx)
 
     if end_idx < 0:
-        return None
+        return joern_nodes[start_idx:]
     
     return joern_nodes[start_idx: end_idx]
 
@@ -243,6 +243,8 @@ def evaluate_size(size_str):
         "sizeof(unsignedshort)": "2",
         "sizeof(long)": "8",
         "sizeof(unsignedlong)": "8",
+        "sizeof(int64_t)": "8",
+        "sizeof(twoIntsStruct)": "8",
         "char[": "1*",
         "unsignedchar[": "1*",
         "signedchar[": "1*",
@@ -252,10 +254,17 @@ def evaluate_size(size_str):
         "unsignedshort[": "2*",
         "long[": "8*",
         "unsignedlong[": "8*",
+        "int64_t[": "8*",
+        "twoIntsStruct[": "8*"
     }
     for key, value in replacements.items():
         expression = expression.replace(key, value)
 
+    try:
+        size_value = eval(expression)
+    except NameError as e:
+        print(size_str)
+    
     return eval(expression)
 
 def get_buffer_write_byte_count(joern_nodes, v):
