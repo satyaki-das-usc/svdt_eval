@@ -22,6 +22,7 @@ function_metadata_filename: "function_metadata.json"
 dataset_filename: "function.json"
 pairs_filename: "vv_vn_pairs.json"
 
+ignore_list_filename: "ignore_list.json"
 detection_result_filename: "detection_result.json"
 
 

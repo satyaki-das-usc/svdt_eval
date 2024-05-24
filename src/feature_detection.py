@@ -101,6 +101,13 @@ if __name__ == "__main__":
             all_cpp_paths = json.load(rfi)
         logging.info("Completed.")
     
+    ignore_list_filepath = join(dataset_root, config.ignore_list_filename)
+
+    with open(ignore_list_filepath, "r") as rfi:
+        ignore_list = set(json.load(rfi))
+    
+    all_cpp_paths = list(set(all_cpp_paths).difference(ignore_list))
+    
     logging.info(f"Going over {len(all_cpp_paths)} files...")
     with Manager() as m:
         message_queue = m.Queue()  # type: ignore
