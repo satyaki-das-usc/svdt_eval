@@ -40,30 +40,30 @@ def init_log():
     logging.info(f"Logging dir: {LOG_DIR}")
 
 def process_file_parallel(cpp_path, queue: Queue):
-    nodes_dir = join(csv_path, cpp_path)
-    CPG = build_CPG(nodes_dir, cpp_path)
+    try:
+        nodes_dir = join(csv_path, cpp_path)
+        CPG = build_CPG(nodes_dir, cpp_path)
 
-    detection_algos = [incorr_calc_buff_size, buff_access_src_size, off_by_one, buff_overread, double_free, use_after_free, buff_underwrite, buff_underread]
-    sensi_algos = [sensi_read, sensi_write]
+        detection_algos = [incorr_calc_buff_size, buff_access_src_size, off_by_one, buff_overread, double_free, use_after_free, buff_underwrite, buff_underread]
+        sensi_algos = [sensi_read, sensi_write]
 
-    detection_results = []
-    for algo in detection_algos:
-        try:
-            detection_results.append(algo(nodes_dir, CPG)[1:])
-        except Exception as e:
-            logging.error(cpp_path)
+        detection_results = []
+        for algo in detection_algos:
+            detection_results.append(algo(nodes_dir, CPG)[1:])      
 
-    Y = []
-    if cpp_path in ground_truth:
-        Y = ground_truth[cpp_path]
-    for algo in sensi_algos:
-        try:
-            detection_results.append(algo(nodes_dir, CPG, Y)[1:])
-        except Exception as e:
-            logging.error(cpp_path)
-    
-    return {cpp_path: detection_results}
-
+        Y = []
+        if cpp_path in ground_truth:
+            Y = ground_truth[cpp_path]
+        for algo in sensi_algos:
+            try:
+                detection_results.append(algo(nodes_dir, CPG, Y)[1:])
+            except Exception as e:
+                logging.error(cpp_path)
+        
+        return {cpp_path: detection_results}
+    except Exception as e:
+        logging.error(cpp_path)
+        raise e
 
 if __name__ == "__main__":
     __args = parse_args()
@@ -121,6 +121,8 @@ if __name__ == "__main__":
         message_queue.put("finished")
         pool.close()
         pool.join()
+
+    detection_result_list = [result for result in detection_result_list if isinstance(result, dict)]
     
     detection_result_dict = dict()
     logging.info(f"Converting data to JSON...")
