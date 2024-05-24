@@ -1,3 +1,5 @@
+import ast
+
 from os.path import join
 
 from src.common_utils import read_csv
@@ -231,6 +233,17 @@ def get_buffer_write_src(joern_nodes, v):
 
     return arg_nodes[1]["code"].strip()
 
+def can_be_evaluated(math_expression):
+    try:
+        tree = ast.parse(math_expression, mode='eval')
+        if not (isinstance(tree, ast.Expression) and
+                isinstance(tree.body, (ast.Num, ast.BinOp, ast.UnaryOp)) and
+                all(isinstance(node, (ast.Num, ast.BinOp, ast.UnaryOp)) for node in ast.walk(tree))):
+            return False
+        return True
+    except SyntaxError:
+        return False
+
 def evaluate_size(size_str):
     expression = f"{size_str}".replace(" ", "").replace("]", "")
     replacements = {
@@ -260,11 +273,8 @@ def evaluate_size(size_str):
     for key, value in replacements.items():
         expression = expression.replace(key, value)
 
-    try:
-        size_value = eval(expression)
-    except NameError as e:
-        print(size_str)
-    
+    if not can_be_evaluated(expression):
+        return -2147483648
     return eval(expression)
 
 def get_buffer_write_byte_count(joern_nodes, v):

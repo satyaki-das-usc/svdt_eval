@@ -131,5 +131,5 @@ if __name__ == "__main__":
     detection_result_path = join(dataset_root, config.detection_result_filename)
     logging.info(f"Conversion completed. Writing detection results to {detection_result_path}...")
     with open(detection_result_path, "w") as wfi:
-        json.dump(detection_result_path, wfi, indent=2)
+        json.dump(detection_result_dict, wfi, indent=2)
     logging.info("Completed.")
