@@ -55,10 +55,7 @@ def process_file_parallel(cpp_path, queue: Queue):
         if cpp_path in ground_truth:
             Y = ground_truth[cpp_path]
         for algo in sensi_algos:
-            try:
-                detection_results.append(algo(nodes_dir, CPG, Y)[1:])
-            except Exception as e:
-                logging.error(cpp_path)
+            detection_results.append(algo(nodes_dir, CPG, Y)[1:])
         
         return {cpp_path: detection_results}
     except Exception as e:
