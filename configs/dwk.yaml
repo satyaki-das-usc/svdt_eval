@@ -3,12 +3,12 @@ num_workers: 8
 log_offline: false
 
 # preprocess keys
-joern_path: "/media/satyaki/160f047a-dacc-449d-9208-a75717e899a1/research/repos/joern/joern-parse"
+joern_path: "joern/joern-parse"
 split_token: false
 cleaning_method: "delabel"
 
 # data keys
-repo_root: "/media/satyaki/160f047a-dacc-449d-9208-a75717e899a1/research/repos/SySeVRCopy"
+repo_root: "SySeVRCopy"
 data_folder: "data"
 source_root_folder: "source-code"
 csv_folder: "csv"

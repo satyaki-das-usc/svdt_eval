@@ -68,7 +68,7 @@ def process_file_parallel(cpp_path, queue: Queue):
 if __name__ == "__main__":
     __args = parse_args()
     config = cast(DictConfig, OmegaConf.load(__args.config))
-    repo_root = config.repo_root
+    repo_root = join("..", config.repo_root)
     data_folder = join(repo_root, config.data_folder)
     dataset_root = join(data_folder, config.dataset.name)
     init_log()
