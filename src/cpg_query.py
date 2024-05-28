@@ -1,4 +1,4 @@
-import ast
+import re
 
 from os.path import join
 
@@ -234,15 +234,17 @@ def get_buffer_write_src(joern_nodes, v):
     return arg_nodes[1]["code"].strip()
 
 def can_be_evaluated(math_expression):
-    try:
-        tree = ast.parse(math_expression, mode='eval')
-        if not (isinstance(tree, ast.Expression) and
-                isinstance(tree.body, (ast.Num, ast.BinOp, ast.UnaryOp)) and
-                all(isinstance(node, (ast.Num, ast.BinOp, ast.UnaryOp)) for node in ast.walk(tree))):
-            return False
-        return True
-    except SyntaxError:
+    valid_pattern = re.compile(r'^[\d\+\-\*/\(\)\.\s]+$')
+    
+    if not valid_pattern.match(math_expression):
         return False
+    
+    try:
+        result = eval(math_expression, {"__builtins__": None}, {})
+    except:
+        return False
+    
+    return True
 
 def evaluate_size(size_str):
     expression = f"{size_str}".replace(" ", "").replace("]", "")
