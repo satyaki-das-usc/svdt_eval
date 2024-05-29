@@ -279,27 +279,34 @@ def evaluate_size(size_str):
         return -2147483648
     return eval(expression)
 
-def get_buffer_write_byte_count(joern_nodes, v):
+def get_buffer_write_byte_count_str(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
 
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
-    return evaluate_size(arg_nodes[2]["code"].strip())
+    return arg_nodes[2]["code"].strip()
 
-def get_buffer_length(joern_nodes, v, node_type):
+def get_buffer_write_byte_count(joern_nodes, v):
+    return evaluate_size(get_buffer_write_byte_count_str(joern_nodes, v))
+
+def get_buffer_length_str(joern_nodes, v, node_type):
     line_nodes = get_line_nodes(joern_nodes, v)
     if node_type == "AF":
         arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
 
         assert len(arg_nodes) == 1, f"ERROR: Buffer alloc with {len(arg_nodes)} arguments"
 
-        return evaluate_size(arg_nodes[0]["code"].strip())
+        return arg_nodes[0]["code"].strip()
     elif node_type == "AD":
         size_str = [node for node in line_nodes if node["type"] == "IdentifierDeclType"][0]["code"]
 
-        return evaluate_size(size_str)
-    return -1
+        return size_str
+    
+    return "-1"
+
+def get_buffer_length(joern_nodes, v, node_type):
+    return evaluate_size(get_buffer_length_str(joern_nodes, v, node_type))
 
 def get_buffer_alloc_dest(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)

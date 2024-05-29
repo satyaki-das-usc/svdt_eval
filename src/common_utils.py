@@ -1,3 +1,4 @@
+from shutil import copytree
 import networkx as nx
 
 from argparse import ArgumentParser
@@ -18,6 +19,13 @@ def parse_args():
     args = arg_parser.parse_args()
 
     return args
+
+def copy_directory(source_dir, destination_dir):
+    try:
+        copytree(source_dir, destination_dir)
+        print(f"Directory copied from {source_dir} to {destination_dir}")
+    except Exception as e:
+        print(f"Error copying directory: {e}")
 
 def read_csv(csv_file_path: str) -> List:
     assert exists(csv_file_path), f"no {csv_file_path}"
