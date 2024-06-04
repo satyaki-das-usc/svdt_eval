@@ -246,6 +246,40 @@ def can_be_evaluated(math_expression):
     
     return True
 
+def get_numeric_part(size_str):
+    expression = f"{size_str}".replace(" ", "").replace("]", "")
+    replacements = [
+        "sizeof(char)",
+        "sizeof(unsignedchar)",
+        "sizeof(signedchar)",
+        "sizeof(int)",
+        "sizeof(unsignedint)",
+        "sizeof(short)",
+        "sizeof(unsignedshort)",
+        "sizeof(long)",
+        "sizeof(unsignedlong)",
+        "sizeof(int64_t)",
+        "sizeof(twoIntsStruct)",
+        "char[",
+        "unsignedchar[",
+        "signedchar[",
+        "int[",
+        "unsignedint[",
+        "short[",
+        "unsignedshort[",
+        "long[",
+        "unsignedlong[",
+        "int64_t[",
+        "twoIntsStruct[",
+    ]
+    math_ops = ["+", "-", "*", "/"]
+    for search_key in replacements:
+        expression = expression.replace(search_key, "")
+    for op in math_ops:
+        expression = expression.lstrip(op).rstrip(op)
+    
+    return expression
+
 def evaluate_size(size_str):
     expression = f"{size_str}".replace(" ", "").replace("]", "")
     replacements = {
