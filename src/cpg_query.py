@@ -217,9 +217,28 @@ def get_node_type(joern_nodes, v):
         return "SWF"
     return "UNK"
 
+def get_start_wf_idx(line_nodes):
+    for idx, node in enumerate(line_nodes):
+        if node["type"].strip() != "Callee":
+            continue
+        if node["code"].strip() != "memcpy":
+            continue
+
+        return idx
+
+def get_wf_nodes(line_nodes, start_idx):
+    for idx, node in enumerate(line_nodes[start_idx:]):
+        if node["type"].strip() != "CallExpression":
+            continue
+        return line_nodes[start_idx:start_idx + idx]
+    
+    return line_nodes[start_idx:]
+
 def get_buffer_write_dest(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
-    arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
+    start_idx = get_start_wf_idx(line_nodes)
+    wf_nodes = get_wf_nodes(line_nodes, start_idx)
+    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
 
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
@@ -227,7 +246,9 @@ def get_buffer_write_dest(joern_nodes, v):
 
 def get_buffer_write_src(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
-    arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
+    start_idx = get_start_wf_idx(line_nodes)
+    wf_nodes = get_wf_nodes(line_nodes, start_idx)
+    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
 
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
@@ -313,16 +334,53 @@ def evaluate_size(size_str):
         return -2147483648
     return eval(expression)
 
-def get_buffer_write_byte_count_str(joern_nodes, v):
+def get_len_func_start_idx(line_nodes):
+    for idx, node in enumerate(line_nodes):
+        if node["type"].strip() != "Callee":
+            continue
+        if "len" not in node["code"]:
+            continue
+
+        return idx
+
+def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
 
-    assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
+    buffer_write_byte_count_str = arg_nodes[2]["code"].strip()
+    if len(arg_nodes) == 3:
+        return buffer_write_byte_count_str
+    
+    len_func_start_idx = get_len_func_start_idx(line_nodes)
+    len_func_arg_nodes = [node for node in line_nodes[len_func_start_idx:] if node["type"].strip() == "Argument"]
 
-    return arg_nodes[2]["code"].strip()
+    assert len(len_func_arg_nodes) == 1, f"Call to len func with {len(len_func_arg_nodes)} arguments"
 
-def get_buffer_write_byte_count(joern_nodes, v):
-    return evaluate_size(get_buffer_write_byte_count_str(joern_nodes, v))
+    len_var = len_func_arg_nodes[0]["code"].strip().replace(" ", "")
+    dd_len_var = list(get_incoming_dd_edges_for_var(CPG, v, len_var))
+
+    assert len(dd_len_var) == 1, f"too many lengths for {len_var}"
+    retrived_len = get_buffer_length(joern_nodes, dd_len_var[0], mu(nodes_dir, "type", dd_len_var[0]))
+    replace_from = line_nodes[len_func_start_idx - 1]["code"].strip()
+
+    if replace_from in buffer_write_byte_count_str:
+        return buffer_write_byte_count_str.replace(replace_from, f"{retrived_len}")
+    
+    replace_from = replace_from.replace(" ", "")
+    return buffer_write_byte_count_str.replace(replace_from, f"{retrived_len}")
+
+# def get_buffer_write_byte_count_str(joern_nodes, v):
+#     line_nodes = get_line_nodes(joern_nodes, v)
+#     start_idx = get_start_wf_idx(line_nodes)
+#     wf_nodes = get_wf_nodes(line_nodes, start_idx)
+#     arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
+
+#     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
+
+#     return arg_nodes[2]["code"].strip()
+
+def get_buffer_write_byte_count(CPG, nodes_dir, joern_nodes, v):
+    return evaluate_size(get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v))
 
 def get_buffer_length_str(joern_nodes, v, node_type):
     line_nodes = get_line_nodes(joern_nodes, v)
@@ -365,7 +423,7 @@ def get_deallocated_buffer(joern_nodes, v):
 
     return arg_nodes[0]["code"].strip()
 
-def mu(nodes_dir, key, v):
+def mu(nodes_dir, key, v, CPG=None):
     nodes_path = join(nodes_dir, "nodes.csv")
     joern_nodes = read_csv(nodes_path)
 
@@ -376,7 +434,7 @@ def mu(nodes_dir, key, v):
     if key == "arg_src":
         return get_buffer_write_src(joern_nodes, v)
     if key == "arg_count":
-        return get_buffer_write_byte_count(joern_nodes, v)
+        return get_buffer_write_byte_count(CPG, nodes_dir, joern_nodes, v)
     if key == "len":
         return get_buffer_length(joern_nodes, v, mu(nodes_dir, "type", v))
     if key == "dest":
