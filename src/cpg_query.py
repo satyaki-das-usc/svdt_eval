@@ -221,12 +221,17 @@ def get_start_wf_idx(line_nodes):
     for idx, node in enumerate(line_nodes):
         if node["type"].strip() != "Callee":
             continue
-        if node["code"].strip() != "memcpy":
+        if node["code"].strip() not in ["memcpy", "strncpy"]:
             continue
 
         return idx
 
 def get_wf_nodes(line_nodes, start_idx):
+    if start_idx is None:
+        with open("error.log", "a") as afi:
+            for node in line_nodes:
+                afi.write(f"\nType: {node['type']}; Code: {node['code']}")
+
     for idx, node in enumerate(line_nodes[start_idx:]):
         if node["type"].strip() != "CallExpression":
             continue
