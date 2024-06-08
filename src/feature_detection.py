@@ -49,7 +49,7 @@ def process_file_parallel(cpp_path, queue: Queue):
 
         detection_results = []
         for algo in detection_algos:
-            detection_results.append(algo(nodes_dir, CPG)[1:])      
+            detection_results.append(algo(nodes_dir, CPG)[1:])
 
         Y = []
         if cpp_path in ground_truth:
