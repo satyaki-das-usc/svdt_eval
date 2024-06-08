@@ -374,15 +374,15 @@ def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
     replace_from = replace_from.replace(" ", "")
     return buffer_write_byte_count_str.replace(replace_from, f"{retrived_len}")
 
-# def get_buffer_write_byte_count_str(joern_nodes, v):
-#     line_nodes = get_line_nodes(joern_nodes, v)
-#     start_idx = get_start_wf_idx(line_nodes)
-#     wf_nodes = get_wf_nodes(line_nodes, start_idx)
-#     arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
+def get_buffer_write_byte_count_str(joern_nodes, v):
+    line_nodes = get_line_nodes(joern_nodes, v)
+    start_idx = get_start_wf_idx(line_nodes)
+    wf_nodes = get_wf_nodes(line_nodes, start_idx)
+    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
 
-#     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
+    assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
-#     return arg_nodes[2]["code"].strip()
+    return arg_nodes[2]["code"].strip()
 
 def get_buffer_write_byte_count(CPG, nodes_dir, joern_nodes, v):
     return evaluate_size(get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v))

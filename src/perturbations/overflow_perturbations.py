@@ -1,11 +1,11 @@
 from os.path import join, dirname, splitext, basename
 
 from src.common_utils import copy_directory
-from src.cpg_query import mu, get_concrete_buffer_write_byte_count_str, get_buffer_length_str, get_numeric_part
+from src.cpg_query import mu, get_buffer_write_byte_count_str, get_buffer_length_str, get_numeric_part
 
 def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, d, u, v = entry
-    n_str = get_concrete_buffer_write_byte_count_str(joern_nodes, v)
+    n_str = get_buffer_write_byte_count_str(joern_nodes, v)
     n_str_trimmed = n_str.replace(" ", "")
     len_d_str = get_buffer_length_str(joern_nodes, u, mu(nodes_dir, "type", u))
     len_d_str_trimmed = len_d_str.replace(" ", "")
@@ -86,7 +86,7 @@ def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, s
 def perturb_buff_access_src_size(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, d, s, u, v, len_s_line = entry
     
-    n_str = get_concrete_buffer_write_byte_count_str(joern_nodes, v)
+    n_str = get_buffer_write_byte_count_str(joern_nodes, v)
     n_str_trimmed = n_str.replace(" ", "")
     n_numeric = get_numeric_part(n_str_trimmed)
     
