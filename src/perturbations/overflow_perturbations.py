@@ -1,7 +1,7 @@
 from os.path import join, dirname, splitext, basename
 
-from src.common_utils import copy_directory
-from src.cpg_query import mu, get_buffer_write_byte_count_str, get_buffer_length_str, get_numeric_part
+from src.common_utils import copy_directory, replace_substring_with_spaces, create_min_check
+from src.cpg_query import mu, get_buffer_write_byte_count_str, get_buffer_length_str, get_numeric_part, get_line_nodes, get_len_func_start_idx
 
 def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, d, u, v = entry
@@ -148,6 +148,65 @@ def perturb_buff_access_src_size(entry, nodes_dir, joern_nodes, dataset_root, so
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
         wfi.writelines(both_equal_to_len_d_dst_lines)
+    perturbed_file_paths.append(join(cpp_dir, dst_filename))
+
+    return {cpp_path: {feat_name: perturbed_file_paths}}
+
+def perturb_off_by_one(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
+    feat_name, s, u, v = entry
+
+    n_str = get_buffer_write_byte_count_str(joern_nodes, v)
+    n_str_trimmed = n_str.replace(" ", "")
+    n_numeric = get_numeric_part(n_str_trimmed)
+    n_numeric_wo_plus_one = replace_substring_with_spaces(n_numeric, "+1", "").lstrip("(").rstrip(")")
+    
+    len_s_str = get_buffer_length_str(joern_nodes, u, mu(nodes_dir, "type", u))
+    len_s_str_trimmed = len_s_str.replace(" ", "")
+    len_s_numeric = get_numeric_part(len_s_str_trimmed)
+
+    filename, extension = splitext(basename(cpp_path))
+
+    src_cpp_file_path = join(source_root_path, cpp_path)
+    dst_cpp_dir = dirname(join(dataset_root, feat_name, cpp_path))
+
+    src_cpp_dir = dirname(src_cpp_file_path)
+    copy_directory(src_cpp_dir, dst_cpp_dir)
+
+    with open(src_cpp_file_path, "r") as rfi:
+        src_lines = rfi.readlines()
+    
+    cpp_dir = dirname(cpp_path)
+    perturbed_file_paths = []
+
+    larger_src_dst_lines = [] + src_lines
+    len_s_numeric_plus_one = f"{len_s_numeric}+1"
+    larger_src_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_s_numeric, len_s_numeric_plus_one)
+    
+    postfix = f"{u}_FP"
+    dst_filename = f"{filename}_{postfix}{extension}"
+    dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
+    with open(dst_cpp_file_path, "w") as wfi:
+        wfi.writelines(larger_src_dst_lines)
+    perturbed_file_paths.append(join(cpp_dir, dst_filename))
+
+    min_check_dst_lines = [] + src_lines
+    line_nodes = get_line_nodes(joern_nodes, v)
+    arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
+    len_func_start_idx = get_len_func_start_idx(line_nodes)
+    src_len_func_call = replace_substring_with_spaces(line_nodes[len_func_start_idx - 1]["code"], " ", "")
+    src_len_func_call_plus_one = f"{src_len_func_call}+1"
+    dst_len_func_call = src_len_func_call.replace(s, arg_nodes[0]["code"].strip())
+    min_check_replacement = create_min_check(src_len_func_call, dst_len_func_call)
+    if src_len_func_call_plus_one in n_str_trimmed:
+        min_check_dst_lines[v-1] = replace_substring_with_spaces(src_lines[v-1], src_len_func_call_plus_one, min_check_replacement)
+    else:
+        min_check_dst_lines[v-1] = replace_substring_with_spaces(src_lines[v-1], src_len_func_call, min_check_replacement)
+    
+    postfix = f"{v}_FR"
+    dst_filename = f"{filename}_{postfix}{extension}"
+    dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
+    with open(dst_cpp_file_path, "w") as wfi:
+        wfi.writelines(min_check_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
     return {cpp_path: {feat_name: perturbed_file_paths}}

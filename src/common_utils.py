@@ -1,9 +1,35 @@
+import re
+
 from shutil import copytree
 import networkx as nx
 
 from argparse import ArgumentParser
 from os.path import exists, join
 from typing import List, Set, Tuple, Dict
+
+def replace_substring_with_spaces(original_string, to_replace, replacement):
+    """
+    Replace all occurrences of a substring in a string with another substring,
+    allowing for arbitrary spaces in the original substring.
+
+    Parameters:
+    original_string (str): The string to perform the replacement on.
+    to_replace (str): The substring to be replaced.
+    replacement (str): The substring to replace with.
+
+    Returns:
+    str: The string with the replacements made.
+    """
+    # Create a regex pattern that matches the target substring with arbitrary spaces
+    pattern = r'\s*'.join(re.escape(char) for char in to_replace)
+    
+    # Use regex sub function to replace the pattern with the replacement
+    result = re.sub(pattern, replacement, original_string, flags=re.IGNORECASE)
+    
+    return result
+
+def create_min_check(a, b):
+    return f"({a} < {b}) ? {a} : {b}"
 
 def parse_args():
     arg_parser = ArgumentParser()
