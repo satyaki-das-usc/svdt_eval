@@ -1,4 +1,5 @@
 import re
+import json
 
 from os.path import join
 
@@ -308,32 +309,10 @@ def get_numeric_part(size_str):
 
 def evaluate_size(size_str):
     expression = f"{size_str}".replace(" ", "").replace("]", "")
-    replacements = {
-        "sizeof(char)": "1",
-        "sizeof(unsignedchar)": "1",
-        "sizeof(signedchar)": "1",
-        "sizeof(int)": "4",
-        "sizeof(unsignedint)": "4",
-        "sizeof(short)": "2",
-        "sizeof(unsignedshort)": "2",
-        "sizeof(long)": "8",
-        "sizeof(unsignedlong)": "8",
-        "sizeof(int64_t)": "8",
-        "sizeof(twoIntsStruct)": "8",
-        "char[": "1*",
-        "unsignedchar[": "1*",
-        "signedchar[": "1*",
-        "int[": "4*",
-        "unsignedint[": "4*",
-        "short[": "2*",
-        "unsignedshort[": "2*",
-        "long[": "8*",
-        "unsignedlong[": "8*",
-        "int64_t[": "8*",
-        "twoIntsStruct[": "8*"
-    }
-    for key, value in replacements.items():
-        expression = expression.replace(key, value)
+    with open("size_replacements.json", "r") as rfi:
+        replacements = json.load(rfi)
+        for key, value in replacements.items():
+            expression = expression.replace(key, value)
 
     if not can_be_evaluated(expression):
         return -2147483648
@@ -347,6 +326,15 @@ def get_len_func_start_idx(line_nodes):
             continue
 
         return idx
+
+def is_wcslen_call(line_nodes, len_func_start_idx):
+    for node in line_nodes[len_func_start_idx:]:
+        if node["type"].strip() != "Callee":
+            continue
+        if node["code"].strip() != "wcslen":
+            continue
+        return True
+    return False
 
 def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
@@ -366,6 +354,8 @@ def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
 
     assert len(dd_len_var) == 1, f"too many lengths for {len_var}"
     retrived_len = get_buffer_length(joern_nodes, dd_len_var[0], mu(nodes_dir, "type", dd_len_var[0]))
+    if is_wcslen_call(line_nodes, len_func_start_idx):
+        retrived_len = int(retrived_len / 4)
     replace_from = line_nodes[len_func_start_idx - 1]["code"].strip()
 
     if replace_from in buffer_write_byte_count_str:
