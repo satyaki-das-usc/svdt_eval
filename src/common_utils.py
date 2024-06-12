@@ -1,6 +1,6 @@
 import re
 
-from shutil import copytree
+from shutil import copytree, rmtree
 import networkx as nx
 
 from argparse import ArgumentParser
@@ -48,6 +48,8 @@ def parse_args():
 
 def copy_directory(source_dir, destination_dir):
     try:
+        if exists(destination_dir):
+            rmtree(destination_dir)
         copytree(source_dir, destination_dir)
         print(f"Directory copied from {source_dir} to {destination_dir}")
     except Exception as e:

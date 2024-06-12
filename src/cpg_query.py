@@ -430,6 +430,8 @@ def mu(nodes_dir, key, v, CPG=None):
         return get_buffer_write_src(joern_nodes, v)
     if key == "arg_count":
         return get_buffer_write_byte_count(CPG, nodes_dir, joern_nodes, v)
+    if key == "arg_count_str":
+        return get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v)
     if key == "len":
         return get_buffer_length(joern_nodes, v, mu(nodes_dir, "type", v))
     if key == "dest":
