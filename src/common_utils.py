@@ -7,6 +7,18 @@ from argparse import ArgumentParser
 from os.path import exists, join
 from typing import List, Set, Tuple, Dict
 
+def match_leading_spaces(x, y):
+    # Count leading spaces in y
+    leading_spaces_y = len(y) - len(y.lstrip(' '))
+    
+    # Remove leading spaces from x
+    x_stripped = x.lstrip(' ')
+    
+    # Add the same number of leading spaces to x
+    modified_x = ' ' * leading_spaces_y + x_stripped
+    
+    return modified_x
+
 def replace_substring_with_spaces(original_string, to_replace, replacement):
     """
     Replace all occurrences of a substring in a string with another substring,
