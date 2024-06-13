@@ -10,7 +10,6 @@ def generate_line_w_wrong_condition(line_txt, idx, literal):
 
 def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, v, b, idx = entry
-    print(v)
 
     filename, extension = splitext(basename(cpp_path))
 
@@ -66,7 +65,6 @@ def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_
 
 def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, v, b, idx = entry
-    print(v)
 
     filename, extension = splitext(basename(cpp_path))
 
