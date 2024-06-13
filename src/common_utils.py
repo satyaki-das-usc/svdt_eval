@@ -61,7 +61,8 @@ def parse_args():
 def copy_directory(source_dir, destination_dir):
     try:
         if exists(destination_dir):
-            rmtree(destination_dir)
+            print(f"Directory {destination_dir} already exists")
+            return
         copytree(source_dir, destination_dir)
         print(f"Directory copied from {source_dir} to {destination_dir}")
     except Exception as e:
