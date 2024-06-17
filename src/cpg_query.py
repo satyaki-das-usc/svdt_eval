@@ -344,6 +344,8 @@ def get_len_func_start_idx(line_nodes):
             continue
 
         return idx
+    
+    return None
 
 def is_wcslen_call(line_nodes, len_func_start_idx):
     for node in line_nodes[len_func_start_idx:]:
@@ -363,8 +365,10 @@ def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
         return buffer_write_byte_count_str
     
     len_func_start_idx = get_len_func_start_idx(line_nodes)
-    len_func_arg_nodes = [node for node in line_nodes[len_func_start_idx:] if node["type"].strip() == "Argument"]
+    if len_func_start_idx is None:
+        return buffer_write_byte_count_str
 
+    len_func_arg_nodes = [node for node in line_nodes[len_func_start_idx:] if node["type"].strip() == "Argument"]
     if len(len_func_arg_nodes) == 0:
         return buffer_write_byte_count_str
 
