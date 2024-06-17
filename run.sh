@@ -11,3 +11,4 @@ PIP_CACHE_DIR=/media/satyaki/22cce3a2-7e84-4401-9b92-07e2fbeec5561/.cache/pip TM
 
 
 PYTHONPATH="." python src/feature_detection.py
+PYTHONPATH="." python src/ignore_list_feature_detection.py

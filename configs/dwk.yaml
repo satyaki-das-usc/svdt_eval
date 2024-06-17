@@ -23,6 +23,7 @@ dataset_filename: "function.json"
 pairs_filename: "vv_vn_pairs.json"
 
 ignore_list_filename: "ignore_list.json"
+ignore_list_detection_result_filename: "ignore_list_detection_result.json"
 detection_result_filename: "detection_result.json"
 
 

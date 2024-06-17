@@ -227,25 +227,39 @@ def get_start_wf_idx(line_nodes):
 
         return idx
 
-def get_wf_nodes(line_nodes, start_idx):
+def binary_search_insert(nums, target):
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return left
+
+def get_wf_arg_nodes(line_nodes, start_idx):
     if start_idx is None:
         with open("error.log", "a") as afi:
             for node in line_nodes:
                 afi.write(f"\nType: {node['type']}; Code: {node['code']}")
-
-    for idx, node in enumerate(line_nodes[start_idx:]):
-        if node["type"].strip() != "CallExpression":
-            continue
-        return line_nodes[start_idx:start_idx + idx]
     
-    return line_nodes[start_idx:]
+    arg_indices = [(start_idx + idx) for idx, node in enumerate(line_nodes[start_idx:]) if node["type"].strip() == "Argument"]
+    rm_arg_indices = [binary_search_insert(arg_indices, start_idx + idx) for idx, node in enumerate(line_nodes[start_idx:]) if node["type"].strip() == "CallExpression"]
+
+    return [line_nodes[arg_node_idx] for idx, arg_node_idx in enumerate(arg_indices) if idx not in rm_arg_indices]
 
 def get_buffer_write_dest(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     start_idx = get_start_wf_idx(line_nodes)
-    wf_nodes = get_wf_nodes(line_nodes, start_idx)
-    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
+    arg_nodes = get_wf_arg_nodes(line_nodes, start_idx)
 
+    if len(arg_nodes) != 3:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+    
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
     return arg_nodes[0]["code"].strip()
@@ -253,9 +267,13 @@ def get_buffer_write_dest(joern_nodes, v):
 def get_buffer_write_src(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     start_idx = get_start_wf_idx(line_nodes)
-    wf_nodes = get_wf_nodes(line_nodes, start_idx)
-    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
+    arg_nodes = get_wf_arg_nodes(line_nodes, start_idx)
 
+    if len(arg_nodes) != 3:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+    
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
     return arg_nodes[1]["code"].strip()
@@ -347,12 +365,15 @@ def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
     len_func_start_idx = get_len_func_start_idx(line_nodes)
     len_func_arg_nodes = [node for node in line_nodes[len_func_start_idx:] if node["type"].strip() == "Argument"]
 
-    assert len(len_func_arg_nodes) == 1, f"Call to len func with {len(len_func_arg_nodes)} arguments"
+    if len(len_func_arg_nodes) == 0:
+        return buffer_write_byte_count_str
 
     len_var = len_func_arg_nodes[0]["code"].strip().replace(" ", "")
     dd_len_var = list(get_incoming_dd_edges_for_var(CPG, v, len_var))
 
-    assert len(dd_len_var) == 1, f"too many lengths for {len_var}"
+    if len(dd_len_var) == 0:
+        return buffer_write_byte_count_str
+    
     retrived_len = get_buffer_length(joern_nodes, dd_len_var[0], mu(nodes_dir, "type", dd_len_var[0]))
     if is_wcslen_call(line_nodes, len_func_start_idx):
         retrived_len = int(retrived_len / 4)
@@ -367,9 +388,13 @@ def get_concrete_buffer_write_byte_count_str(CPG, nodes_dir, joern_nodes, v):
 def get_buffer_write_byte_count_str(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     start_idx = get_start_wf_idx(line_nodes)
-    wf_nodes = get_wf_nodes(line_nodes, start_idx)
-    arg_nodes = [node for node in wf_nodes if node["type"] == "Argument"]
-
+    arg_nodes = get_wf_arg_nodes(line_nodes, start_idx)
+    
+    if len(arg_nodes) != 3:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+    
     assert len(arg_nodes) == 3, f"ERROR: Buffer write with {len(arg_nodes)} arguments"
 
     return arg_nodes[2]["code"].strip()
@@ -382,6 +407,11 @@ def get_buffer_length_str(joern_nodes, v, node_type):
     if node_type == "AF":
         arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
 
+        if len(arg_nodes) != 1:
+            cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+            with open("error.log", "a") as afi:
+                afi.write(f"{cpp_path}::{v}\n")
+        
         assert len(arg_nodes) == 1, f"ERROR: Buffer alloc with {len(arg_nodes)} arguments"
 
         return arg_nodes[0]["code"].strip()
@@ -399,6 +429,16 @@ def get_buffer_alloc_dest(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     asgnmnt_nodes = [node for node in line_nodes if node["type"] == "AssignmentExpression"]
 
+    if len(asgnmnt_nodes) != 1:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+
+    if len(asgnmnt_nodes) != 1:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+    
     assert len(asgnmnt_nodes) == 1, f"ERROR: Buffer alloc with {len(asgnmnt_nodes)} assignment expressions"
 
     return asgnmnt_nodes[0]["code"].split("=", maxsplit=1)[0].strip()
@@ -414,6 +454,12 @@ def get_array_indexing_info(joern_nodes, v):
 def get_deallocated_buffer(joern_nodes, v):
     line_nodes = get_line_nodes(joern_nodes, v)
     arg_nodes = [node for node in line_nodes if node["type"] == "Argument"]
+
+    if len(arg_nodes) != 1:
+        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
+        with open("error.log", "a") as afi:
+            afi.write(f"{cpp_path}::{v}\n")
+    
     assert len(arg_nodes) == 1, f"ERROR: Buffer dealloc with {len(arg_nodes)} arguments"
 
     return arg_nodes[0]["code"].strip()
