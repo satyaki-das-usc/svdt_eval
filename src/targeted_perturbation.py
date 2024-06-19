@@ -23,6 +23,7 @@ data_folder = ""
 dataset_root = ""
 source_root_path = ""
 csv_path = ""
+perturbation_results_dir = "perturbation_results"
 
 def init_log():
     LOG_DIR = join(dataset_root, "logs")
@@ -41,6 +42,12 @@ def init_log():
     logging.info(f"Logging dir: {LOG_DIR}")
 
 def process_file_parallel(cpp_path, queue: Queue):
+    results_dir = join(perturbation_results_dir, cpp_path)
+    results_filepath = join(results_dir, "perturbation_results.json")
+    if exists(results_filepath):
+        with open(results_filepath, "r") as rfi:
+            return {cpp_path: json.load(rfi)}
+    
     if cpp_path not in all_detection_results:
         return {cpp_path: None}
     detection_results = all_detection_results[cpp_path]
@@ -76,6 +83,11 @@ def process_file_parallel(cpp_path, queue: Queue):
             elif entry[0] == "sensi_write":
                 perturbation_results.append(perturb_sensi_write(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
     
+    if not exists(results_dir):
+        os.makedirs(results_dir, exist_ok=True)
+    with open(results_filepath, "w") as wfi:
+        json.dump(perturbation_results, wfi, indent=2)
+    
     return {cpp_path: perturbation_results}
 
 if __name__ == "__main__":
@@ -95,9 +107,9 @@ if __name__ == "__main__":
         ground_truth = json.load(rfi)
     logging.info("Completed.")
 
-    perturbation_result_path = join(dataset_root, config.detection_result_filename)
-    logging.info(f"Reading detection results from {perturbation_result_path}...")
-    with open(perturbation_result_path, "r") as rfi:
+    detection_result_path = join(dataset_root, config.detection_result_filename)
+    logging.info(f"Reading detection results from {detection_result_path}...")
+    with open(detection_result_path, "r") as rfi:
         all_detection_results = json.load(rfi)
     logging.info("Completed.")
 
@@ -156,7 +168,7 @@ if __name__ == "__main__":
         for key, value in entry.items():
             perturbation_result_dict[key] = value
     
-    perturbation_result_path = join(dataset_root, config.detection_result_filename)
+    perturbation_result_path = join(dataset_root, config.perturbation_result_filename)
     logging.info(f"Conversion completed. Writing perturbation results to {perturbation_result_path}...")
     with open(perturbation_result_path, "w") as wfi:
         json.dump(perturbation_result_dict, wfi, indent=2)

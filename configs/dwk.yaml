@@ -25,6 +25,7 @@ pairs_filename: "vv_vn_pairs.json"
 ignore_list_filename: "ignore_list.json"
 ignore_list_detection_result_filename: "ignore_list_detection_result.json"
 detection_result_filename: "detection_result.json"
+perturbation_result_filename: "perturbation_result.json"
 
 
 save_every_epoch: 1

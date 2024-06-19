@@ -22,6 +22,7 @@ data_folder = ""
 dataset_root = ""
 source_root_path = ""
 csv_path = ""
+ignore_list_results_dir = "ignore_list_results"
 
 def init_log():
     LOG_DIR = join(dataset_root, "logs")
@@ -30,7 +31,7 @@ def init_log():
     
     logging.basicConfig(
         handlers=[
-            logging.FileHandler(join(LOG_DIR, "feature_detection.log")),
+            logging.FileHandler(join(LOG_DIR, "ignore_list_feature_detection.log")),
             logging.StreamHandler()
         ],
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -40,14 +41,24 @@ def init_log():
     logging.info(f"Logging dir: {LOG_DIR}")
 
 def process_file_parallel(cpp_path, queue: Queue):
+    logging.info(f"Processing {cpp_path}...")
+    results_dir = join(ignore_list_results_dir, cpp_path)
+    results_filepath = join(results_dir, "results.json")
+    if exists(results_filepath):
+        with open(results_filepath, "r") as rfi:
+            logging.info(f"{cpp_path} processing completed.")
+            return {cpp_path: json.load(rfi)}
     try:
+        detection_results = []
+        if cpp_path in ["000/153/513/utils.c"]:
+            return {cpp_path: detection_results}
+
         nodes_dir = join(csv_path, cpp_path)
         CPG = build_CPG(nodes_dir, cpp_path)
 
         detection_algos = [incorr_calc_buff_size, buff_access_src_size, off_by_one, buff_overread, double_free, use_after_free, buff_underwrite, buff_underread]
         sensi_algos = [sensi_read, sensi_write]
 
-        detection_results = []
         for algo in detection_algos:
             detection_results.append(algo(nodes_dir, CPG)[1:])
 
@@ -57,6 +68,13 @@ def process_file_parallel(cpp_path, queue: Queue):
         for algo in sensi_algos:
             detection_results.append(algo(nodes_dir, CPG, Y)[1:])
         
+        if not exists(results_dir):
+            os.makedirs(results_dir, exist_ok=True)
+        
+        with open(results_filepath, "w") as wfi:
+            json.dump(detection_results, wfi, indent=2)
+        
+        logging.info(f"{cpp_path} processing completed.")
         return {cpp_path: detection_results}
     except Exception as e:
         logging.error(cpp_path)

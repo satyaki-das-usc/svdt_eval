@@ -437,11 +437,8 @@ def get_buffer_alloc_dest(joern_nodes, v):
         cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
         with open("error.log", "a") as afi:
             afi.write(f"{cpp_path}::{v}\n")
-
-    if len(asgnmnt_nodes) != 1:
-        cpp_path = joern_nodes[0]["code"].strip().split("source-code")[-1][1:]
-        with open("error.log", "a") as afi:
-            afi.write(f"{cpp_path}::{v}\n")
+        
+        return None
     
     assert len(asgnmnt_nodes) == 1, f"ERROR: Buffer alloc with {len(asgnmnt_nodes)} assignment expressions"
 
