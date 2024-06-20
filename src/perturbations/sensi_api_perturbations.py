@@ -32,7 +32,10 @@ def perturb_sensi_read(entry, nodes_dir, joern_nodes, dataset_root, source_root_
     replace_w_sim_sensi_dst_lines = [] + src_lines
     sensi_read_replacements = {
         "getch": "getchar",
-        "getchar": "getch"
+        "getchar": "getch",
+        "fgets": "fgets",
+        "gets": "gets",
+        "fgetc": "fgetc"
     }
     replace_w_sim_sensi_dst_lines[v - 1] = reduce(lambda txt, rep: txt.replace(*rep), [(funcname, sensi_read_replacements[funcname]) for funcname in called_sensi_func], src_lines[v - 1])
     postfix = f"{v}_FP"
@@ -74,7 +77,11 @@ def perturb_sensi_write(entry, nodes_dir, joern_nodes, dataset_root, source_root
     replace_w_sim_sensi_dst_lines = [] + src_lines
     sensi_write_replacements = {
        "memcpy": "strncpy",
-       "strncpy": "memcpy"
+       "strncpy": "memcpy",
+       "strcpy": "strcpy",
+       "wcsncpy": "wcsncpy",
+       "memset": "memset",
+       "wmemset": "wmemset"
     }
     replace_w_sim_sensi_dst_lines[v - 1] = reduce(lambda txt, rep: txt.replace(*rep), [(funcname, sensi_write_replacements[funcname]) for funcname in called_sensi_func], src_lines[v - 1])
     postfix = f"{v}_FP"
