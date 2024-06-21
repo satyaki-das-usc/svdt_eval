@@ -8,8 +8,12 @@ def generate_line_w_condition(line_txt, idx, literal):
 def generate_line_w_wrong_condition(line_txt, idx, literal):
     return f"if({idx} {'<' if literal == 0 else '>='} {literal}) {{ {line_txt.strip()} }}\n"
 
-def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
+def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path, vul_lines=[]):
     feat_name, v, b, idx = entry
+    perturbed_file_paths = []
+
+    if v not in vul_lines:
+        return {cpp_path: {feat_name: perturbed_file_paths}}
 
     filename, extension = splitext(basename(cpp_path))
 
@@ -23,7 +27,6 @@ def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_
         src_lines = rfi.readlines()
     
     cpp_dir = dirname(cpp_path)
-    perturbed_file_paths = []
 
     cond_for_0_dst_lines = [] + src_lines
     cond_for_0_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, 0), src_lines[v - 1])
@@ -63,8 +66,12 @@ def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_
 
     return {cpp_path: {feat_name: perturbed_file_paths}}
 
-def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
+def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path, vul_lines=[]):
     feat_name, v, b, idx = entry
+    perturbed_file_paths = []
+
+    if v not in vul_lines:
+        return {cpp_path: {feat_name: perturbed_file_paths}}
 
     filename, extension = splitext(basename(cpp_path))
 
@@ -78,7 +85,6 @@ def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_r
         src_lines = rfi.readlines()
     
     cpp_dir = dirname(cpp_path)
-    perturbed_file_paths = []
 
     cond_for_0_dst_lines = [] + src_lines
     cond_for_0_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, 0), src_lines[v - 1])

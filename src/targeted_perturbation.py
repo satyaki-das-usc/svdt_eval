@@ -75,9 +75,15 @@ def process_file_parallel(cpp_path, queue: Queue):
             elif entry[0] == "use_after_free":
                 perturbation_results.append(perturb_use_after_free(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
             elif entry[0] == "buff_underwrite":
-                perturbation_results.append(perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
+                if cpp_path not in ground_truth:
+                    perturbation_results.append(perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
+                else:
+                    perturbation_results.append(perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path, ground_truth[cpp_path])[cpp_path])
             elif entry[0] == "buff_underread":
-                perturbation_results.append(perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
+                if cpp_path not in ground_truth:
+                    perturbation_results.append(perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
+                else:
+                    perturbation_results.append(perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path, ground_truth[cpp_path])[cpp_path])
             elif entry[0] == "sensi_read":
                 perturbation_results.append(perturb_sensi_read(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path)[cpp_path])
             elif entry[0] == "sensi_write":
