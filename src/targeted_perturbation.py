@@ -150,7 +150,6 @@ if __name__ == "__main__":
 
     logging.info(f"Going over {len(all_cpp_paths)} files...")
     
-    
     with Manager() as m:
         message_queue = m.Queue()  # type: ignore
         pool = Pool(USE_CPU)

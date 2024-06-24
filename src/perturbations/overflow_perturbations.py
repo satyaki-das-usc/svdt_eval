@@ -5,6 +5,7 @@ from src.cpg_query import mu, get_buffer_write_byte_count_str, get_buffer_length
 
 def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, source_root_path, cpp_path):
     feat_name, d, u, v = entry
+    
     n_str = get_buffer_write_byte_count_str(joern_nodes, v)
     n_str_trimmed = n_str.replace(" ", "")
     len_d_str = get_buffer_length_str(joern_nodes, u, mu(nodes_dir, "type", u))
@@ -28,7 +29,7 @@ def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, s
     both_equal_to_n_dst_lines = [] + src_lines
     both_equal_to_n_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_d_str_trimmed, n_str_trimmed)
     
-    postfix = f"{u}_FR"
+    postfix = f"{u}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -38,7 +39,7 @@ def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, s
     both_equal_to_len_d_dst_lines = [] + src_lines
     both_equal_to_len_d_dst_lines[v - 1] = replace_substring_with_spaces(src_lines[v - 1], n_str_trimmed, len_d_str_trimmed)
 
-    postfix = f"{v}_FR"
+    postfix = f"{v}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -49,7 +50,7 @@ def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, s
     lower_len_d_str = f"{len_d_str_trimmed} - 1"
     lower_len_d_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_d_str_trimmed, lower_len_d_str)
     
-    postfix = f"{u}_FP"
+    postfix = f"{u}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -60,7 +61,7 @@ def perturb_incorr_calc_buff_size(entry, nodes_dir, joern_nodes, dataset_root, s
     higher_n_str = f"{n_str_trimmed} + 1"
     higher_n_dst_lines[v - 1] = replace_substring_with_spaces(src_lines[v - 1], n_str_trimmed, higher_n_str)
 
-    postfix = f"{v}_FP"
+    postfix = f"{v}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -103,7 +104,7 @@ def perturb_buff_access_src_size(entry, nodes_dir, joern_nodes, dataset_root, so
     src_len_n_inc_by_one_dst_lines[v - 1] = src_lines[v - 1].replace(n_numeric, perturbation_replacement)
     src_len_n_inc_by_one_dst_lines[len_s_line - 1] = src_lines[len_s_line - 1].replace(n_numeric, perturbation_replacement)
 
-    postfix = f"{v}_{len_s_line}_FP"
+    postfix = f"{v}_{len_s_line}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -113,7 +114,7 @@ def perturb_buff_access_src_size(entry, nodes_dir, joern_nodes, dataset_root, so
     both_equal_to_n_dst_lines = [] + src_lines
     both_equal_to_n_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u-1], len_d_str_trimmed, n_str_trimmed)
     
-    postfix = f"{u}_FR"
+    postfix = f"{u}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -123,7 +124,7 @@ def perturb_buff_access_src_size(entry, nodes_dir, joern_nodes, dataset_root, so
     both_equal_to_len_d_dst_lines = [] + src_lines
     both_equal_to_len_d_dst_lines[v - 1] = replace_substring_with_spaces(src_lines[v - 1], n_str_trimmed, len_d_str_trimmed)
 
-    postfix = f"{v}_FR"
+    postfix = f"{v}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -162,7 +163,7 @@ def perturb_off_by_one(entry, nodes_dir, joern_nodes, dataset_root, source_root_
     len_s_numeric_plus_one = f"{len_s_numeric}+1"
     larger_src_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_s_numeric, len_s_numeric_plus_one)
     
-    postfix = f"{u}_FP"
+    postfix = f"{u}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -182,7 +183,7 @@ def perturb_off_by_one(entry, nodes_dir, joern_nodes, dataset_root, source_root_
     else:
         min_check_dst_lines[v-1] = replace_substring_with_spaces(src_lines[v-1], src_len_func_call, min_check_replacement)
     
-    postfix = f"{v}_FR"
+    postfix = f"{v}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -216,7 +217,7 @@ def perturb_buff_overread(entry, nodes_dir, joern_nodes, dataset_root, source_ro
     both_equal_to_n_dst_lines = [] + src_lines
     both_equal_to_n_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_s_str_trimmed, n_str_trimmed)
     
-    postfix = f"{u}_FR"
+    postfix = f"{u}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -228,7 +229,7 @@ def perturb_buff_overread(entry, nodes_dir, joern_nodes, dataset_root, source_ro
     n_str_v_trimmed = n_str_v.replace(" ", "")
     both_equal_to_len_s_dst_lines[v - 1] = replace_substring_with_spaces(src_lines[v - 1], n_str_v_trimmed, len_s_str_trimmed)
 
-    postfix = f"{v}_FR"
+    postfix = f"{v}_FR_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -239,7 +240,7 @@ def perturb_buff_overread(entry, nodes_dir, joern_nodes, dataset_root, source_ro
     lower_len_s_str = f"{len_s_str_trimmed} - 1"
     lower_len_s_dst_lines[u - 1] = replace_substring_with_spaces(src_lines[u - 1], len_s_str_trimmed, lower_len_s_str)
     
-    postfix = f"{u}_FP"
+    postfix = f"{u}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
@@ -250,7 +251,7 @@ def perturb_buff_overread(entry, nodes_dir, joern_nodes, dataset_root, source_ro
     higher_n_str = f"{n_str_v_trimmed} + 1"
     higher_n_dst_lines[v - 1] = replace_substring_with_spaces(src_lines[v - 1], n_str_v_trimmed, higher_n_str)
 
-    postfix = f"{v}_FP"
+    postfix = f"{v}_FP_{v}"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:

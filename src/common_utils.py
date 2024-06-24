@@ -7,6 +7,22 @@ from argparse import ArgumentParser
 from os.path import exists, join
 from typing import List, Set, Tuple, Dict
 
+def dict_to_tuple(single_item_dict):
+    if len(single_item_dict) != 1:
+        raise ValueError("Dictionary does not have exactly one key-value pair.")
+    
+    # Extract the single key-value pair from the dictionary
+    key, value = next(iter(single_item_dict.items()))
+    return (key, value)
+
+# Function to convert sets to lists
+def convert_sets_to_lists(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    if isinstance(obj, dict):
+        return {k: convert_sets_to_lists(v) for k, v in obj.items()}
+    return obj
+
 def match_leading_spaces(x, y):
     # Count leading spaces in y
     leading_spaces_y = len(y) - len(y.lstrip(' '))

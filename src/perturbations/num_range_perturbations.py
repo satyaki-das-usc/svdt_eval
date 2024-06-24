@@ -37,13 +37,13 @@ def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_
         wfi.writelines(cond_for_0_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
     
-    cond_for_neg_1_dst_lines = [] + src_lines
-    cond_for_neg_1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
-    postfix = f"{v}_FR_neg_1"
+    cond_for_neg1_dst_lines = [] + src_lines
+    cond_for_neg1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
+    postfix = f"{v}_FR_neg1"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
-        wfi.writelines(cond_for_neg_1_dst_lines)
+        wfi.writelines(cond_for_neg1_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
     
     wrong_cond_for_0_dst_lines = [] + src_lines
@@ -55,13 +55,13 @@ def perturb_buff_underwrite(entry, nodes_dir, joern_nodes, dataset_root, source_
         wfi.writelines(wrong_cond_for_0_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
     
-    wrong_cond_for_neg_1_dst_lines = [] + src_lines
-    wrong_cond_for_neg_1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_wrong_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
-    postfix = f"{v}_FP_neg_1"
+    wrong_cond_for_neg1_dst_lines = [] + src_lines
+    wrong_cond_for_neg1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_wrong_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
+    postfix = f"{v}_FP_neg1"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
-        wfi.writelines(wrong_cond_for_neg_1_dst_lines)
+        wfi.writelines(wrong_cond_for_neg1_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
     return {cpp_path: {feat_name: perturbed_file_paths}}
@@ -95,13 +95,13 @@ def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_r
         wfi.writelines(cond_for_0_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
-    cond_for_neg_1_dst_lines = [] + src_lines
-    cond_for_neg_1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
-    postfix = f"{v}_FR_neg_1"
+    cond_for_neg1_dst_lines = [] + src_lines
+    cond_for_neg1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
+    postfix = f"{v}_FR_neg1"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
-        wfi.writelines(cond_for_neg_1_dst_lines)
+        wfi.writelines(cond_for_neg1_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
     wrong_cond_for_0_dst_lines = [] + src_lines
@@ -113,13 +113,13 @@ def perturb_buff_underread(entry, nodes_dir, joern_nodes, dataset_root, source_r
         wfi.writelines(wrong_cond_for_0_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
-    wrong_cond_for_neg_1_dst_lines = [] + src_lines
-    wrong_cond_for_neg_1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_wrong_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
-    postfix = f"{v}_FP_neg_1"
+    wrong_cond_for_neg1_dst_lines = [] + src_lines
+    wrong_cond_for_neg1_dst_lines[v - 1] = match_leading_spaces(generate_line_w_wrong_condition(src_lines[v - 1], idx, -1), src_lines[v - 1])
+    postfix = f"{v}_FP_neg1"
     dst_filename = f"{filename}_{postfix}{extension}"
     dst_cpp_file_path = join(dst_cpp_dir, dst_filename)
     with open(dst_cpp_file_path, "w") as wfi:
-        wfi.writelines(wrong_cond_for_neg_1_dst_lines)
+        wfi.writelines(wrong_cond_for_neg1_dst_lines)
     perturbed_file_paths.append(join(cpp_dir, dst_filename))
 
     return {cpp_path: {feat_name: perturbed_file_paths}}
