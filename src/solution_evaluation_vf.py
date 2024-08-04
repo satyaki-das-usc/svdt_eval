@@ -16,6 +16,7 @@ location_key = ""
 target_key = ""
 prediction_key = ""
 name_feat = ""
+filewise_pred_mapping_path = ""
 
 spu_feat_list = ["tab", "symbolize", ]
 
@@ -23,11 +24,6 @@ spu_feats_dict = {"node_set": "Node Set", "edge_set": "Edge Set", "tab": "Code F
 
 def parse_args():
     arg_parser = ArgumentParser()
-    arg_parser.add_argument("-f",
-                            "--file_path_key",
-                            help="Key denoting the file where the unit of prediction exists",
-                            default="file_path",
-                            type=str)
     arg_parser.add_argument("-u",
                             help="--unit_id_key",
                             help="Key denoting the unique id for the unit of prediction",
@@ -50,6 +46,11 @@ def parse_args():
                             type=str)
     arg_parser.add_argument("-n",
                             help="--name_feat",
+                            help="Name of feature",
+                            default="pred",
+                            type=str)
+    arg_parser.add_argument("-m",
+                            help="--filewise_pred_mapping_path",
                             help="Name of feature",
                             default="pred",
                             type=str)
@@ -82,3 +83,4 @@ if __name__ == "__main__":
     target_key = __args.target_key
     prediction_key = __args.prediction_key
     name_feat = __args.name_feat
+    filewise_pred_mapping_path = __args.filewise_pred_mapping_path
