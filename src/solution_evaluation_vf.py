@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import pandas as pd
 
 from argparse import ArgumentParser
 from os.path import join, exists, isdir, isfile, basename, dirname, splitext
@@ -17,10 +18,27 @@ target_key = ""
 prediction_key = ""
 name_feat = ""
 filewise_pred_mapping_path = ""
+detector_name = ""
 
-spu_feat_list = ["tab", "symbolize", ]
-
-spu_feats_dict = {"node_set": "Node Set", "edge_set": "Edge Set", "tab": "Code Formatting", "symbolize": "Identifier Name"}
+feature_name_dict = {
+    "incorr_calc_buff_size": "Incorrect Calculation of Buffer Size",
+    "buff_access_src_size": "Buffer Access Using Size of Source Buffer",
+    "off_by_one": "Off-by-one Error",
+    "buff_overread": "Buffer Over-read",
+    "double_free": "Double-Free",
+    "use_after_free": "Use-After-Free",
+    "buff_underwrite": "Buffer Underwrite",
+    "buff_underread": "Buffer Under-read",
+    "sensi_read": "Sensitive Read API",
+    "sensi_write": "Sensitive Write API"
+}
+FR_success_cnt_list = []
+FR_all_cnt_list = []
+FR_success_rate_list = []
+FP_success_cnt_list = []
+FP_all_cnt_list = []
+FP_success_rate_list = []
+feature_column_name_list = []
 
 def parse_args():
     arg_parser = ArgumentParser()
@@ -54,6 +72,12 @@ def parse_args():
                             help="Name of feature",
                             default="pred",
                             type=str)
+    arg_parser.add_argument("-d",
+                            help="--detector_name",
+                            help="Name of the DL-based vulnerability detector",
+                            required=True,
+                            default=None,
+                            type=str)
     
     args = arg_parser.parse_args()
 
@@ -66,7 +90,7 @@ def init_log():
     
     logging.basicConfig(
         handlers=[
-            logging.FileHandler(join(LOG_DIR, "feature_detection.log")),
+            logging.FileHandler(join(LOG_DIR, "solution_evaluation_vf.log")),
             logging.StreamHandler()
         ],
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -74,6 +98,58 @@ def init_log():
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.info("=========New session=========")
     logging.info(f"Logging dir: {LOG_DIR}")
+
+def get_FR_perturbation_response(file_results, perturbed_file_results, feature_name, perturbation_info):
+    success_perturbations = []
+    all_perturbations = []
+    for pert_entry in perturbed_file_results:
+        pert_func_line = pert_entry["line_nums"][0]
+        pert_func_name = pert_entry["processed_func"].splitlines()[0]
+        pert_target = pert_entry["target"]
+        pert_pred = pert_entry["raw_preds"]
+        for entry in file_results:
+            func_line = entry["line_nums"][0] 
+            func_name = entry["processed_func"].splitlines()[0]
+            if pert_func_line != func_line:
+                continue
+            if pert_func_name != func_name:
+                continue
+            target = entry["target"]
+            pred = entry["raw_preds"]
+            if pert_target == target:
+                continue
+            all_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            if pert_pred != pred:
+                continue
+            success_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+    
+    return success_perturbations, all_perturbations
+
+def get_FP_perturbation_response(file_results, perturbed_file_results, feature_name, perturbation_info):
+    success_perturbations = []
+    all_perturbations = []
+    for pert_entry in perturbed_file_results:
+        pert_func_line = pert_entry["line_nums"][0]
+        pert_func_name = pert_entry["processed_func"].splitlines()[0]
+        pert_target = pert_entry["target"]
+        pert_pred = pert_entry["raw_preds"]
+        for entry in file_results:
+            func_line = entry["line_nums"][0] 
+            func_name = entry["processed_func"].splitlines()[0]
+            if pert_func_line != func_line:
+                continue
+            if pert_func_name != func_name:
+                continue
+            target = entry["target"]
+            pred = entry["raw_preds"]
+            if pert_target != target:
+                continue
+            all_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            if pert_pred == pred:
+                continue
+            success_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+    
+    return success_perturbations, all_perturbations
 
 if __name__ == "__main__":
     __args = parse_args()
@@ -84,3 +160,55 @@ if __name__ == "__main__":
     prediction_key = __args.prediction_key
     name_feat = __args.name_feat
     filewise_pred_mapping_path = __args.filewise_pred_mapping_path
+    detector_name = __args.detector_name
+
+    for feature_name, feature_column_name in feature_name_dict.items():
+        logging.info(feature_name)
+        success_FR_perts = []
+        all_FR_perts = []
+        success_FP_perts = []
+        all_FP_perts = []
+        dataset_root = join(data_folder, feature_name)
+        filewise_pred_mapping_filepath = join(dataset_root, "filewise_pred_mapping.json")
+        with open(filewise_pred_mapping_filepath, "r") as rfi:
+            filewise_pred_mapping = json.load(rfi)
+        unperturbed_file_list_path = join(dataset_root, "unperturbed_file_list.json")
+        with open(unperturbed_file_list_path, "r") as rfi:
+            unperturbed_file_list = json.load(rfi)
+        for filepath, file_results in filewise_pred_mapping.items():
+            if filepath not in unperturbed_file_list:
+                continue
+            filepath_wo_ext, ext = splitext(filepath)
+            file_preturbation_results = {key:value for key, value in filewise_pred_mapping.items() if len(key) > len(filepath) and filepath_wo_ext in key}
+            
+            for perturbed_filepath, perturbed_file_results in file_preturbation_results.items():
+                perturbed_filepath_wo_ext, perturbed_ext = splitext(perturbed_filepath)
+                perturbation_info = perturbed_filepath_wo_ext.replace(filepath_wo_ext, "").split("_")[1:]
+                if "FR" in perturbation_info:
+                    perturbation_response = get_FR_perturbation_response(file_results, perturbed_file_results, feature_name, perturbation_info)
+                    success_FR_perts += perturbation_response[0]
+                    all_FR_perts += perturbation_response[1]
+                elif "FP" in perturbation_info:
+                    perturbation_response = get_FP_perturbation_response(file_results, perturbed_file_results, feature_name, perturbation_info)
+                    success_FP_perts += perturbation_response[0]
+                    all_FP_perts += perturbation_response[1]
+        FR_success_rate = (len(success_FR_perts) / len(all_FR_perts)) * 100 if  len(all_FR_perts) else 0
+        FP_success_rate = (len(success_FP_perts) / len(all_FP_perts)) * 100 if  len(all_FP_perts) else 0
+        feature_column_name_list.append(feature_column_name)
+        FR_success_cnt_list.append(len(success_FR_perts))
+        FR_all_cnt_list.append(len(all_FR_perts))
+        FR_success_rate_list.append(FR_success_rate)
+        FP_success_cnt_list.append(len(success_FP_perts))
+        FP_all_cnt_list.append(len(all_FP_perts))
+        FP_success_rate_list.append(FP_success_rate)
+        logging.info(f"FP: {FP_success_rate}, FR: {FR_success_rate}")
+
+    pd.DataFrame({
+        "Feature Name": feature_column_name_list,
+        "FP_succ_cnt": FP_success_cnt_list,
+        "FP_all_cnt": FP_all_cnt_list,
+        "FP Success Rate": FP_success_rate_list,
+        "FR_succ_cnt": FR_success_cnt_list,
+        "FR_all_cnt": FR_all_cnt_list,
+        "FR Success Rate": FR_success_rate_list
+    }).to_csv(f"{detector_name}_vf_rq3.csv", index=False)
