@@ -16,7 +16,7 @@ def init_log():
     
     logging.basicConfig(
         handlers=[
-            logging.FileHandler(join(LOG_DIR, "perturbation_ground_truth_generator.log")),
+            logging.FileHandler(join(LOG_DIR, "perturbation_line_num_mapper.log")),
             logging.StreamHandler()
         ],
         format='%(asctime)s %(levelname)-8s %(message)s',
