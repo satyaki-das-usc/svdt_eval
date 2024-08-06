@@ -1,6 +1,10 @@
 # svdt_eval
 Repository for the framework to evaluate Software Vulnerability Detection Tools (SVDT)
 
+# Replication data link
+
+https://drive.google.com/file/d/1J5d06p1_-ZTrNonwmM4oAFIoZaABCPkw/view?usp=sharing
+
 
 # For Unix
 
