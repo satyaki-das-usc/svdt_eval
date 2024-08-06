@@ -94,7 +94,7 @@ def init_log():
     
     logging.basicConfig(
         handlers=[
-            logging.FileHandler(join(LOG_DIR, "solution_evaluation_vf.log")),
+            logging.FileHandler(join(LOG_DIR, "solution_evaluation_sf.log")),
             logging.StreamHandler()
         ],
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     rq2_results = []
 
     for feature_name, feature_column_name in spu_feats_dict.items():
-        pred_mapping_path = f"data/{feature_name}/verbose_results/pred_mapping.json"
+        pred_mapping_path = f"data/{feature_name}/pred_mapping.json"
         with open(pred_mapping_path, "r") as rfi:
             pred_mapping = json.load(rfi)
         

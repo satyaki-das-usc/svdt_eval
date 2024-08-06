@@ -65,7 +65,7 @@ def parse_args():
     arg_parser.add_argument("-n",
                             help="--name_feat",
                             help="Name of feature",
-                            default="pred",
+                            default="SARD",
                             type=str)
     arg_parser.add_argument("-m",
                             help="--filewise_pred_mapping_path",
@@ -103,25 +103,23 @@ def get_FR_perturbation_response(file_results, perturbed_file_results, feature_n
     success_perturbations = []
     all_perturbations = []
     for pert_entry in perturbed_file_results:
-        pert_func_line = pert_entry["line_nums"][0]
-        pert_func_name = pert_entry["processed_func"].splitlines()[0]
-        pert_target = pert_entry["target"]
-        pert_pred = pert_entry["raw_preds"]
+        pert_loc = pert_entry[location_key]
+        pert_unit_id = pert_entry[unit_id_key]
+        pert_target = pert_entry[target_key]
+        pert_pred = pert_entry[prediction_key]
         for entry in file_results:
-            func_line = entry["line_nums"][0] 
-            func_name = entry["processed_func"].splitlines()[0]
-            if pert_func_line != func_line:
+            loc = entry[location_key]
+            unit_id = entry[unit_id_key]
+            if pert_loc != loc:
                 continue
-            if pert_func_name != func_name:
-                continue
-            target = entry["target"]
-            pred = entry["raw_preds"]
+            target = entry[target_key]
+            pred = entry[prediction_key]
             if pert_target == target:
                 continue
-            all_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            all_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
             if pert_pred != pred:
                 continue
-            success_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            success_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
     
     return success_perturbations, all_perturbations
 
@@ -129,25 +127,23 @@ def get_FP_perturbation_response(file_results, perturbed_file_results, feature_n
     success_perturbations = []
     all_perturbations = []
     for pert_entry in perturbed_file_results:
-        pert_func_line = pert_entry["line_nums"][0]
-        pert_func_name = pert_entry["processed_func"].splitlines()[0]
-        pert_target = pert_entry["target"]
-        pert_pred = pert_entry["raw_preds"]
+        pert_loc = pert_entry[location_key]
+        pert_unit_id = pert_entry[unit_id_key]
+        pert_target = pert_entry[target_key]
+        pert_pred = pert_entry[prediction_key]
         for entry in file_results:
-            func_line = entry["line_nums"][0] 
-            func_name = entry["processed_func"].splitlines()[0]
-            if pert_func_line != func_line:
+            loc = entry[location_key]
+            unit_id = entry[unit_id_key]
+            if pert_loc != loc:
                 continue
-            if pert_func_name != func_name:
-                continue
-            target = entry["target"]
-            pred = entry["raw_preds"]
+            target = entry[target_key]
+            pred = entry[prediction_key]
             if pert_target != target:
                 continue
-            all_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            all_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
             if pert_pred == pred:
                 continue
-            success_perturbations.append((f"{func_name}::{func_line}", f"{pert_func_name}::{pert_func_line}"))
+            success_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
     
     return success_perturbations, all_perturbations
 
