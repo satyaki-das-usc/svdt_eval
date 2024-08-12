@@ -5,6 +5,7 @@ import pandas as pd
 
 from argparse import ArgumentParser
 from os.path import join, exists, isdir, isfile, basename, dirname, splitext
+from tqdm import tqdm
 
 data_folder = "replication"
 dataset_root = ""
@@ -147,7 +148,7 @@ if __name__ == "__main__":
             "FPP Success Rate": FP_success_rate_list,
             "rq2": rq2_results
         }).to_csv(f"{detector_name}_sf_rq2.csv", index=False)
-    elif detector_name in ["LineVul", "SySeVR"]:
+    elif detector_name == "LineVul":
         spu_feats_dict = {"tab": "Code Formatting", "symbolize": "Identifier Name"}
         with open(join(data_folder, "SARD", "function_pred_mapping.json") , "r") as rfi:
             orig_function_pred_mapping = json.load(rfi)
@@ -173,6 +174,57 @@ if __name__ == "__main__":
             FP_success_rate_list.append(succ_rate)
             rq2_results.append(f"{succ_rate:.2f}")
 
+        pd.DataFrame({
+            "Feature Name": feature_column_name_list,
+            "FPP_succ_cnt": FP_success_cnt_list,
+            "FPP_all_cnt": FP_all_cnt_list,
+            "FPP Success Rate": FP_success_rate_list,
+            "rq2": rq2_results
+        }).to_csv(f"{detector_name}_sf_rq2.csv", index=False)
+    elif detector_name == "SySeVR":
+        spu_feats_dict = {"tab": "Code Formatting", "symbolize": "Identifier Name"}
+        with open(join(data_folder, "SARD", "pred_mapping.json"), "r") as rfi:
+            orig_pred_mapping = json.load(rfi)
+        
+        trimmed_orig_pred_mapping = dict()
+        for slice_key, results in tqdm(orig_pred_mapping.items(), total=len(orig_pred_mapping)):
+            slice_parts = slice_key.split()
+            trimmed_slice_key = f"{slice_parts[1]}::{slice_parts[3]}"
+            trimmed_orig_pred_mapping[trimmed_slice_key] = results
+        
+
+        feature_column_name_list = []
+        FP_success_cnt_list = []
+        FP_all_cnt_list = []
+        FP_success_rate_list = []
+        rq2_results = []
+
+        for feature_name, feature_column_name in spu_feats_dict.items():
+            with open(join(data_folder, feature_name, "pred_mapping.json"), "r") as rfi:
+                pert_pred_mapping = json.load(rfi)
+            trimmed_pert_pred_mapping = dict()
+            for slice_key, results in tqdm(pert_pred_mapping.items(), total=len(pert_pred_mapping)):
+                slice_parts = slice_key.split()
+                trimmed_slice_key = f"{slice_parts[1]}::{slice_parts[3]}"
+                trimmed_pert_pred_mapping[trimmed_slice_key] = results
+            
+            total_FPPs = 0
+            succ_FPPs = 0
+
+            for slice_key, results in trimmed_pert_pred_mapping.items():
+                if slice_key not in trimmed_orig_pred_mapping:
+                    continue
+                total_FPPs += 1
+                if slice_key in trimmed_orig_pred_mapping and results["pred"] == trimmed_orig_pred_mapping[slice_key]["pred"]:
+                    succ_FPPs += 1
+            
+            feature_column_name_list.append(feature_column_name)
+
+            FP_success_cnt_list.append(succ_FPPs)
+            FP_all_cnt_list.append(total_FPPs)
+            succ_rate = (succ_FPPs / total_FPPs) * 100
+            FP_success_rate_list.append(succ_rate)
+            rq2_results.append(f"{succ_rate:.2f}")
         pd.DataFrame({
             "Feature Name": feature_column_name_list,
             "FPP_succ_cnt": FP_success_cnt_list,
