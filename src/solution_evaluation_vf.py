@@ -6,7 +6,7 @@ import pandas as pd
 from argparse import ArgumentParser
 from os.path import join, exists, isdir, isfile, basename, dirname, splitext
 
-data_folder = ""
+data_folder = "replication"
 dataset_root = ""
 source_root_path = ""
 csv_path = ""
@@ -16,8 +16,6 @@ unit_id_key = ""
 location_key = ""
 target_key = ""
 prediction_key = ""
-name_feat = ""
-filewise_pred_mapping_path = ""
 detector_name = ""
 
 feature_name_dict = {
@@ -60,16 +58,6 @@ def parse_args():
     arg_parser.add_argument("-p",
                             help="--prediction_key",
                             help="Key denoting the prediction for the unit of prediction",
-                            default="pred",
-                            type=str)
-    arg_parser.add_argument("-n",
-                            help="--name_feat",
-                            help="Name of feature",
-                            default="SARD",
-                            type=str)
-    arg_parser.add_argument("-m",
-                            help="--filewise_pred_mapping_path",
-                            help="Name of feature",
                             default="pred",
                             type=str)
     arg_parser.add_argument("-d",
@@ -154,8 +142,6 @@ if __name__ == "__main__":
     location_key = __args.location_key
     target_key = __args.target_key
     prediction_key = __args.prediction_key
-    name_feat = __args.name_feat
-    filewise_pred_mapping_path = __args.filewise_pred_mapping_path
     detector_name = __args.detector_name
 
     for feature_name, feature_column_name in feature_name_dict.items():

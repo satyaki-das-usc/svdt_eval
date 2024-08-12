@@ -6,7 +6,7 @@ import pandas as pd
 from argparse import ArgumentParser
 from os.path import join, exists, isdir, isfile, basename, dirname, splitext
 
-data_folder = ""
+data_folder = "replication"
 dataset_root = ""
 source_root_path = ""
 csv_path = ""
@@ -24,21 +24,6 @@ spu_feat_list = ["tab", "symbolize", ]
 
 spu_feats_dict = {"node_set": "Node Set", "edge_set": "Edge Set", "tab": "Code Formatting", "symbolize": "Identifier Name"}
 
-feature_name_dict = {
-    "incorr_calc_buff_size": "Incorrect Calculation of Buffer Size",
-    "buff_access_src_size": "Buffer Access Using Size of Source Buffer",
-    "off_by_one": "Off-by-one Error",
-    "buff_overread": "Buffer Over-read",
-    "double_free": "Double-Free",
-    "use_after_free": "Use-After-Free",
-    "buff_underwrite": "Buffer Underwrite",
-    "buff_underread": "Buffer Under-read",
-    "sensi_read": "Sensitive Read API",
-    "sensi_write": "Sensitive Write API"
-}
-FR_success_cnt_list = []
-FR_all_cnt_list = []
-FR_success_rate_list = []
 FP_success_cnt_list = []
 FP_all_cnt_list = []
 FP_success_rate_list = []
@@ -64,16 +49,6 @@ def parse_args():
     arg_parser.add_argument("-p",
                             help="--prediction_key",
                             help="Key denoting the prediction for the unit of prediction",
-                            default="pred",
-                            type=str)
-    arg_parser.add_argument("-n",
-                            help="--name_feat",
-                            help="Name of feature",
-                            default="pred",
-                            type=str)
-    arg_parser.add_argument("-m",
-                            help="--filewise_pred_mapping_path",
-                            help="Name of feature",
                             default="pred",
                             type=str)
     arg_parser.add_argument("-d",
@@ -103,6 +78,30 @@ def init_log():
     logging.info("=========New session=========")
     logging.info(f"Logging dir: {LOG_DIR}")
 
+def get_FP_perturbation_response(file_results, perturbed_file_results, feature_name, perturbation_info):
+    success_perturbations = []
+    all_perturbations = []
+    for pert_entry in perturbed_file_results:
+        pert_loc = pert_entry[location_key]
+        pert_unit_id = pert_entry[unit_id_key]
+        pert_target = pert_entry[target_key]
+        pert_pred = pert_entry[prediction_key]
+        for entry in file_results:
+            loc = entry[location_key]
+            unit_id = entry[unit_id_key]
+            if pert_loc != loc:
+                continue
+            target = entry[target_key]
+            pred = entry[prediction_key]
+            if pert_target != target:
+                continue
+            all_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
+            if pert_pred == pred:
+                continue
+            success_perturbations.append((f"{unit_id}::{loc}", f"{pert_unit_id}::{pert_loc}"))
+    
+    return success_perturbations, all_perturbations
+
 if __name__ == "__main__":
     __args = parse_args()
     file_path_key = __args.file_path_key
@@ -110,9 +109,8 @@ if __name__ == "__main__":
     location_key = __args.location_key
     target_key = __args.target_key
     prediction_key = __args.prediction_key
-    name_feat = __args.name_feat
-    filewise_pred_mapping_path = __args.filewise_pred_mapping_path
     detector_name = __args.detector_name
+
 
     feature_column_name_list = []
     FP_success_cnt_list = []
@@ -120,31 +118,65 @@ if __name__ == "__main__":
     FP_success_rate_list = []
     rq2_results = []
 
-    for feature_name, feature_column_name in spu_feats_dict.items():
-        pred_mapping_path = f"data/{feature_name}/pred_mapping.json"
-        with open(pred_mapping_path, "r") as rfi:
-            pred_mapping = json.load(rfi)
-        
-        
-        total_FPPs = 0
-        succ_FPPs = 0
-        for xfg_path, xfg_info in pred_mapping.items():
-            total_FPPs += 1
-            if not xfg_info["pred_retained"]:
-                continue
-            succ_FPPs += 1
-        
-        feature_column_name_list.append(feature_column_name)
-        FP_success_cnt_list.append(succ_FPPs)
-        FP_all_cnt_list.append(total_FPPs)
-        succ_rate = (succ_FPPs / total_FPPs) * 100
-        FP_success_rate_list.append(succ_rate)
-        rq2_results.append(f"{succ_rate:.2f}")
+    if detector_name in ["DeepWukong", "ReVeal"]:
+        spu_feats_dict = {"node_set": "Node Set", "edge_set": "Edge Set"}
+        for feature_name, feature_column_name in spu_feats_dict.items():
+            pred_mapping_path = join(data_folder, feature_name, "pred_mapping.json")
+            with open(pred_mapping_path, "r") as rfi:
+                pred_mapping = json.load(rfi)
+            
+            total_FPPs = 0
+            succ_FPPs = 0
+            for xfg_path, xfg_info in pred_mapping.items():
+                total_FPPs += 1
+                if not xfg_info["pred_retained"]:
+                    continue
+                succ_FPPs += 1
+            
+            feature_column_name_list.append(feature_column_name)
+            FP_success_cnt_list.append(succ_FPPs)
+            FP_all_cnt_list.append(total_FPPs)
+            succ_rate = (succ_FPPs / total_FPPs) * 100
+            FP_success_rate_list.append(succ_rate)
+            rq2_results.append(f"{succ_rate:.2f}")
 
-    pd.DataFrame({
-        "Feature Name": feature_column_name_list,
-        "FPP_succ_cnt": FP_success_cnt_list,
-        "FPP_all_cnt": FP_all_cnt_list,
-        "FPP Success Rate": FP_success_rate_list,
-        "rq2": rq2_results
-    }).to_csv(f"{detector_name}_sf_rq2.csv", index=False)
+        pd.DataFrame({
+            "Feature Name": feature_column_name_list,
+            "FPP_succ_cnt": FP_success_cnt_list,
+            "FPP_all_cnt": FP_all_cnt_list,
+            "FPP Success Rate": FP_success_rate_list,
+            "rq2": rq2_results
+        }).to_csv(f"{detector_name}_sf_rq2.csv", index=False)
+    elif detector_name in ["LineVul", "SySeVR"]:
+        spu_feats_dict = {"tab": "Code Formatting", "symbolize": "Identifier Name"}
+        with open(join(data_folder, "SARD", "function_pred_mapping.json") , "r") as rfi:
+            orig_function_pred_mapping = json.load(rfi)
+         
+        for feature_name, feature_column_name in spu_feats_dict.items():
+            function_pred_mapping_filepath = join(data_folder, feature_name, "function_pred_mapping.json")
+            with open(function_pred_mapping_filepath, "r") as rfi:
+                pert_function_pred_mapping = json.load(rfi)
+            
+            total_FPPs = 0
+            succ_FPPs = 0
+
+            for function_key, results in pert_function_pred_mapping.items():
+                total_FPPs += 1
+                if results[prediction_key] != orig_function_pred_mapping[function_key][prediction_key]:
+                    continue
+                succ_FPPs += 1
+            
+            feature_column_name_list.append(feature_column_name)
+            FP_success_cnt_list.append(succ_FPPs)
+            FP_all_cnt_list.append(total_FPPs)
+            succ_rate = (succ_FPPs / total_FPPs) * 100
+            FP_success_rate_list.append(succ_rate)
+            rq2_results.append(f"{succ_rate:.2f}")
+
+        pd.DataFrame({
+            "Feature Name": feature_column_name_list,
+            "FPP_succ_cnt": FP_success_cnt_list,
+            "FPP_all_cnt": FP_all_cnt_list,
+            "FPP Success Rate": FP_success_rate_list,
+            "rq2": rq2_results
+        }).to_csv(f"{detector_name}_sf_rq2.csv", index=False)
