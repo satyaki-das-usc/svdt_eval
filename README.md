@@ -1,4 +1,4 @@
-# svdt_eval
+# VIPer
 Repository for the framework to evaluate Software Vulnerability Detection Tools (SVDT)
 
 # Replication data link
