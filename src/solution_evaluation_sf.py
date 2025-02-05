@@ -33,27 +33,27 @@ feature_column_name_list = []
 def parse_args():
     arg_parser = ArgumentParser()
     arg_parser.add_argument("-u",
-                            help="--unit_id_key",
+                            "--unit_id_key",
                             help="Key denoting the unique id for the unit of prediction",
                             default="unit_id",
                             type=str)
     arg_parser.add_argument("-l",
-                            help="--location_key",
+                            "--location_key",
                             help="Key denoting the location of the unit of prediction in source file",
                             default="loc",
                             type=str)
     arg_parser.add_argument("-t",
-                            help="--target_key",
+                            "--target_key",
                             help="Key denoting the ground truth label of the unit of prediction",
                             default="target",
                             type=str)
     arg_parser.add_argument("-p",
-                            help="--prediction_key",
+                            "--prediction_key",
                             help="Key denoting the prediction for the unit of prediction",
                             default="pred",
                             type=str)
     arg_parser.add_argument("-d",
-                            help="--detector_name",
+                            "--detector_name",
                             help="Name of the DL-based vulnerability detector",
                             required=True,
                             default=None,
